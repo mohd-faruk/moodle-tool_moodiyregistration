@@ -52,6 +52,6 @@ class update_request extends \core\event\base {
      * @return string
      */
     public function get_description() {
-        return "The external user requested for registration with Moodiy with registration id '$this->objectid'.";
+        return get_string('updaterequest_desc', 'tool_moodiyregistration', ['objectid' => $this->objectid]);
     }
 }

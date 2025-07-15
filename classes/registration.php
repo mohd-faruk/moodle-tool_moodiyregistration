@@ -289,7 +289,7 @@ class registration {
             $data['verification_key'] = $verificationkey;
 
             try {
-                $response = api::moodiy_registration( $data, null);
+                $response = api::moodiy_registration( $data);
                 if (empty($response) || !is_array($response)) {
                     throw new moodle_exception('errorconnect', 'tool_moodiyregistration', '', 'Invalid response from moodiy');
                 }
@@ -404,7 +404,7 @@ class registration {
             $event->add_record_snapshot('tool_moodiyregistration', $registration);
             $event->trigger();
             \core\notification::add('Site deleted successfully from Moodiy.',
-                \core\output\notification::NOTIFY_ERROR);
+                \core\output\notification::NOTIFY_SUCCESS);
             self::$registration = null;
         } catch (moodle_exception $e) {
             \core\notification::add(get_string('unregistrationerror', 'tool_moodiyregistration', $e->getMessage()),

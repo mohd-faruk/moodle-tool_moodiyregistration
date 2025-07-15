@@ -38,7 +38,7 @@ class eventobservers {
      *
      * This method is triggered when request to pull updated data received.
      *
-     * @param \tool_moodiyregistration\event\moodiyregistration_updated $event The event object.
+     * @param \tool_moodiyregistration\event\update_request $event The event object.
      */
     public static function process_update_request(\tool_moodiyregistration\event\update_request $event) {
 

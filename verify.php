@@ -86,7 +86,7 @@ if (!empty($CFG->debugdeveloper)) {
 }
 
 // Validate the verification key.
-if (!empty($verification_key) && $verification_key === $expected_verification_key) {
+if (!empty($verification_key) && hash_equals($expected_verification_key, $verification_key)) {
     // Valid verification key.
     $response = [
         'status' => 'success',

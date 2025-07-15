@@ -107,10 +107,11 @@ if (json_last_error() !== JSON_ERROR_NONE) {
     $postdata = $_POST;
 }
 // Check for valid payload.
-$payload = implode(',', $postdata);
+ksort($postdata);
+$payload = json_encode($postdata);
 $hmackey = hash_hmac('sha256', $payload, $postdata['site_uuid']);
 
-if (strcmp($hmackey, $headerkey) !== 0) {
+if (!hash_equals($hmackey, $headerkey)) {
     // Invalid HMAC key.
     http_response_code(403); // Forbidden.
     echo json_encode([

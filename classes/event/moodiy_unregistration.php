@@ -39,7 +39,7 @@ class moodiy_unregistration extends \core\event\base {
      * @return string
      */
     public function get_description(): string {
-        return "User {$this->userid} has unregistered the site with id {$this->objectid}.";
+        return get_string('eventmoodiyunregistration_desc', 'tool_moodiyregistration', ['userid' => $this->userid, 'objectid' => $this->objectid]);
     }
 
     /**

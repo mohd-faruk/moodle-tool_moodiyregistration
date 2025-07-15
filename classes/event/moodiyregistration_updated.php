@@ -42,7 +42,7 @@ class moodiyregistration_updated extends \core\event\base {
      * @return string
      */
     public static function get_name() {
-        return get_string('eventmoodiyregistrationpdated', 'tool_moodiyregistration');
+        return get_string('eventmoodiyregistrationupdated', 'tool_moodiyregistration');
     }
 
     /**
@@ -51,6 +51,6 @@ class moodiyregistration_updated extends \core\event\base {
      * @return string
      */
     public function get_description() {
-        return "The user with id '$this->userid' updated the registration with Moodiy with id '$this->objectid'.";
+        return get_string('eventmoodiyregistrationupdated_desc', 'tool_moodiyregistration', ['userid' => $this->userid, 'objectid' => $this->objectid]);
     }
 }

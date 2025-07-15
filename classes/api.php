@@ -115,7 +115,7 @@ class api {
         } else if ($response === false) {
             throw new coding_exception('Error calling API: ' . $curl->getError());
         } else if ($info['http_code'] != 200 || empty($response['success'])) {
-            throw new moodle_exception($response['message']);
+            throw new moodle_exception($response['message'] ?? 'Error during registration update');
         } else {
             return $response;
         }
@@ -156,7 +156,7 @@ class api {
         } else if ($response === false) {
             throw new coding_exception('Error calling API: ' . $curl->getError());
         } else if ($info['http_code'] != 200 || empty($response['success'])) {
-            throw new moodle_exception($response['message']);
+            throw new moodle_exception($response['message'] ?? 'Error during un-registration');
         }
         return $response;
 

@@ -52,6 +52,6 @@ class moodiy_registration extends \core\event\base {
      * @return string
      */
     public function get_description() {
-        return "The user with id '$this->userid' registered the site with Moodiy with id '$this->objectid'.";
+        return get_string('eventmoodiyregistration_desc', 'tool_moodiyregistration', ['userid' => $this->userid, 'objectid' => $this->objectid]);
     }
 }
