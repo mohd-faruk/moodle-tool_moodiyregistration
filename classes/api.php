@@ -90,7 +90,8 @@ class api {
 
         $endpoint = self::API_URL . '/site/register/'.$reginfo->registrationid;
         try {
-            $payload = implode(',', $params);
+            ksort($params);
+            $payload = json_encode($params);
         } catch (\Exception $e) {
             throw new moodle_exception( $e->getMessage());
         }
@@ -134,7 +135,8 @@ class api {
         $params = [];
         $params['site_uuid'] = $reginfo->site_uuid;
         $params['timestamp'] = time();
-        $payload = implode(',', $params);
+        ksort($params);
+        $payload = json_encode($params);
         $hmac = hash_hmac("sha256", $payload, $reginfo->site_uuid);
 
         $curl = new curl();
