@@ -29,4 +29,16 @@ if ($hassiteconfig) {
     $ADMIN->add('root', new admin_externalpage('moodiyregistration',
         get_string('pluginname', 'tool_moodiyregistration'),
         new moodle_url('/admin/tool/moodiyregistration/index.php')));
+
+    $settings = new admin_settingpage('tool_moodiyregistration_settings', new lang_string('pluginname', 'tool_moodiyregistration'));
+
+    $settings->add(new admin_setting_configtext(
+        'tool_moodiyregistration/apiurl',
+        new lang_string('apiurl', 'tool_moodiyregistration'),
+        new lang_string('apiurl_desc', 'tool_moodiyregistration'),
+        'https://moodiycloud.com',
+        PARAM_URL
+    ));
+
+    $ADMIN->add('tools', $settings);
 }

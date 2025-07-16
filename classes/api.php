@@ -39,12 +39,19 @@ use moodle_url;
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 class api {
+
     /**
-     * The base URL for the Moodiy API.
+     * Get the API URL for Moodiy.
      *
-     * @var string
+     * @return string The API URL.
      */
-    const API_URL = 'http://moodiy.local/api';
+    public static function get_apiurl() {
+        $apiurl = get_config('tool_moodiyregistration', 'apiurl');
+        if (empty($apiurl)) {
+            $apiurl = 'https://moodiycloud.com';
+        }
+        return rtrim($apiurl, '/') . '/api';
+    }
 
     /**
      * Register the site with Moodiy.
@@ -56,7 +63,7 @@ class api {
     public static function moodiy_registration($params = []) {
         global $CFG;
 
-        $endpoint = self::API_URL . '/site/register';
+        $endpoint = self::get_apiurl() . '/site/register';
 
         $curl = new curl();
         $header = ['Accept: application/json'];
@@ -88,7 +95,7 @@ class api {
     public static function update_registration(object $reginfo, array $params = []) {
         global $CFG;
 
-        $endpoint = self::API_URL . '/site/register/'.$reginfo->registrationid;
+        $endpoint = self::get_apiurl() . '/site/register/'.$reginfo->registrationid;
         try {
             ksort($params);
             $payload = json_encode($params);
@@ -131,7 +138,7 @@ class api {
     public static function unregister_site(object $reginfo) {
         global $CFG;
 
-        $endpoint = self::API_URL . '/site/register/'.$reginfo->registrationid;
+        $endpoint = self::get_apiurl() . '/site/register/'.$reginfo->registrationid;
         $params = [];
         $params['site_uuid'] = $reginfo->site_uuid;
         $params['timestamp'] = time();

@@ -36,12 +36,13 @@ define('NO_REDIRECT_ON_UPGRADE', true);
 
 require_once('../../../config.php');
 require_once($CFG->libdir . '/filelib.php');
+use tool_moodiyregistration\api;
 
 // Set the appropriate content type for JSON responses.
 header('Content-Type: application/json; charset=utf-8');
 
 // Allow CORS requests from the Laravel application.
-header('Access-Control-Allow-Origin: *');
+header('Access-Control-Allow-Origin:'. api::get_apiurl());
 header('Access-Control-Allow-Methods: POST, OPTIONS');
 header('Access-Control-Allow-Headers: Content-Type, Authorization');
 
