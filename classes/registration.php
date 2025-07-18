@@ -23,6 +23,7 @@
  */
 
 namespace tool_moodiyregistration;
+
 defined('MOODLE_INTERNAL') || die();
 
 use moodle_exception;
@@ -92,11 +93,15 @@ class registration {
     /**
      * Get site registration
      *
-     * @param bool $confirmed
      * @return stdClass|null
      */
-    protected static function get_registration($confirmed = true) {
+    protected static function get_registration() {
         global $DB;
+
+        // For PHPUnit tests, always get fresh data.
+        if (PHPUNIT_TEST) {
+            self::$registration = null;
+        }
 
         if (self::$registration === null) {
             self::$registration = $DB->get_record_sql('SELECT * FROM {tool_moodiyregistration}') ?: null;
@@ -254,6 +259,19 @@ class registration {
         return $siteinfo;
     }
 
+    /**
+     * Get the API wrapper instance.
+     *
+     * @return api_wrapper
+     */
+    protected static function get_api_wrapper() {
+        global $CFG;
+        // Allow for test injection.
+        if (PHPUNIT_TEST && isset($CFG->tool_moodiyregistration_test_api_wrapper)) {
+            return $CFG->tool_moodiyregistration_test_api_wrapper;
+        }
+        return new api_wrapper();
+    }
 
     /**
      * Registers a site
@@ -289,7 +307,9 @@ class registration {
             $data['verification_key'] = $verificationkey;
 
             try {
-                $response = api::moodiy_registration( $data);
+                $api = self::get_api_wrapper();
+                $response = $api->moodiy_registration($data);
+
                 if (empty($response) || !is_array($response)) {
                     throw new moodle_exception('errorconnect', 'tool_moodiyregistration', '', 'Invalid response from moodiy');
                 }
@@ -330,6 +350,10 @@ class registration {
                     return false;
                 }
             }
+            if (PHPUNIT_TEST) {
+                // In tests we do not redirect, just return the response.
+                return $response;
+            }
             redirect(new moodle_url('/admin/tool/moodiyregistration/registrationconfirm.php', [
                 'confirm' => self::$registration,
             ]));
@@ -350,7 +374,8 @@ class registration {
         $data['site_uuid'] = $registration->site_uuid;
 
         try {
-            api::update_registration($registration, $data);
+            $api = self::get_api_wrapper();
+            $api->update_registration($registration, $data);
             $DB->update_record('tool_moodiyregistration', ['id' => $registration->id, 'timemodified' => time()]);
             // Trigger a site registration updated event.
             $event = \tool_moodiyregistration\event\moodiyregistration_updated::create([
@@ -390,7 +415,8 @@ class registration {
 
         // Unregister the site now.
         try {
-            api::unregister_site($registration);
+            $api = self::get_api_wrapper();
+            $api->unregister_site($registration);
             $DB->delete_records('tool_moodiyregistration', ['registrationid' => $registration->registrationid]);
             // Trigger a site unregistration event.
             $event = \tool_moodiyregistration\event\moodiy_unregistration::create([
@@ -409,7 +435,7 @@ class registration {
         } catch (moodle_exception $e) {
             \core\notification::add(get_string('unregistrationerror', 'tool_moodiyregistration', $e->getMessage()),
                 \core\output\notification::NOTIFY_ERROR);
-            return true;
+            return false;
         }
 
         return true;
@@ -481,7 +507,8 @@ class registration {
         $siteinfo = self::get_site_info();
         $siteinfo['site_uuid'] = $registration->site_uuid;
         try {
-            api::update_registration($registration, $siteinfo);
+            $api = self::get_api_wrapper();
+            $api->update_registration($registration, $siteinfo);
             $DB->update_record('tool_moodiyregistration', ['id' => $registration->id, 'timemodified' => time()]);
 
             self::$registration = null;
