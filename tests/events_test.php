@@ -21,7 +21,6 @@
  * @category    test
  * @copyright   2025 VidyaMantra <pinky@vidyamantra.com>
  * @license     http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
- * @covers      \tool_moodiyregistration\event
  */
 
 namespace tool_moodiyregistration;
@@ -45,160 +44,77 @@ class events_test extends \advanced_testcase {
     }
 
     /**
-     * Test the moodiy_registration event.
+     * Data provider for event tests.
+     *
+     * @return array Array of test cases
+     */
+    public static function event_test_cases(): array {
+        return [
+            'registration' => [
+                'eventclass' => moodiy_registration::class,
+                'crud' => 'c',
+                'edulevel' => \core\event\base::LEVEL_OTHER,
+                'needssnapshot' => true,
+                'expectedclass' => '\tool_moodiyregistration\event\moodiy_registration',
+            ],
+            'unregistration' => [
+                'eventclass' => moodiy_unregistration::class,
+                'crud' => 'd',
+                'edulevel' => \core\event\base::LEVEL_OTHER,
+                'needssnapshot' => true,
+                'expectedclass' => '\tool_moodiyregistration\event\moodiy_unregistration',
+            ],
+            'registration_updated' => [
+                'eventclass' => moodiyregistration_updated::class,
+                'crud' => 'u',
+                'edulevel' => \core\event\base::LEVEL_OTHER,
+                'needssnapshot' => true,
+                'expectedclass' => '\tool_moodiyregistration\event\moodiyregistration_updated',
+            ],
+            'update_request' => [
+                'eventclass' => update_request::class,
+                'crud' => 'r',
+                'edulevel' => \core\event\base::LEVEL_OTHER,
+                'needssnapshot' => false,
+                'expectedclass' => '\tool_moodiyregistration\event\update_request',
+            ],
+        ];
+    }
+
+    /**
+     * Test all moodiy registration events.
+     *
+     * @dataProvider event_test_cases
+     * @param string $eventclass The event class to test
+     * @param string $crud The expected CRUD value
+     * @param int $edulevel The expected education level
+     * @param bool $needssnapshot Whether the event needs a record snapshot
+     * @param string $expectedclass The expected class of the triggered event
      * @covers ::moodiy_registration
-     */
-    public function test_moodiy_registration_event(): void {
-        global $DB;
-
-        // Create a test record.
-        $record = new \stdClass();
-        $record->registrationid = 12345;
-        $record->site_uuid = 'test-uuid-123456789';
-        $record->site_url = 'https://example.moodle.org';
-        $record->timecreated = time();
-        $record->timemodified = time();
-        $recordid = $DB->insert_record('tool_moodiyregistration', $record);
-
-        // Create the event.
-        $event = moodiy_registration::create([
-            'context' => \context_system::instance(),
-            'objectid' => $recordid,
-            'other' => [
-                'registrationid' => $record->registrationid,
-                'site_uuid' => $record->site_uuid,
-            ],
-        ]);
-
-        // Add record snapshot.
-        $record->id = $recordid;
-        $event->add_record_snapshot('tool_moodiyregistration', $record);
-
-        // Test the event data.
-        $this->assertEquals('tool_moodiyregistration', $event->objecttable);
-        $this->assertEquals($recordid, $event->objectid);
-        $this->assertEquals('c', $event->crud);
-        $this->assertEquals(\core\event\base::LEVEL_OTHER, $event->edulevel);
-
-        // Trigger the event and capture it.
-        $sink = $this->redirectEvents();
-        $event->trigger();
-        $events = $sink->get_events();
-        $sink->close();
-
-        // Check that the event was triggered.
-        $this->assertCount(1, $events);
-        $triggeredevent = reset($events);
-        $this->assertInstanceOf('\tool_moodiyregistration\event\moodiy_registration', $triggeredevent);
-        $this->assertEquals($recordid, $triggeredevent->objectid);
-    }
-
-    /**
-     * Test the moodiy_unregistration event.
      * @covers ::moodiy_unregistration
-     */
-    public function test_moodiy_unregistration_event(): void {
-        global $DB;
-
-        // Create a test record.
-        $record = new \stdClass();
-        $record->registrationid = 12345;
-        $record->site_uuid = 'test-uuid-123456789';
-        $record->site_url = 'https://example.moodle.org';
-        $record->timecreated = time();
-        $record->timemodified = time();
-        $recordid = $DB->insert_record('tool_moodiyregistration', $record);
-
-        // Create the event.
-        $event = moodiy_unregistration::create([
-            'context' => \context_system::instance(),
-            'objectid' => $recordid,
-            'other' => [
-                'registrationid' => $record->registrationid,
-                'site_uuid' => $record->site_uuid,
-            ],
-        ]);
-
-        // Add record snapshot.
-        $record->id = $recordid;
-        $event->add_record_snapshot('tool_moodiyregistration', $record);
-
-        // Trigger the event and capture it.
-        $sink = $this->redirectEvents();
-        $event->trigger();
-        $events = $sink->get_events();
-        $sink->close();
-
-        // Check that the event was triggered.
-        $this->assertCount(1, $events);
-        $triggeredevent = reset($events);
-        $this->assertInstanceOf('\tool_moodiyregistration\event\moodiy_unregistration', $triggeredevent);
-        $this->assertEquals($recordid, $triggeredevent->objectid);
-        $this->assertEquals('d', $triggeredevent->crud);
-    }
-
-    /**
-     * Test the moodiyregistration_updated event.
      * @covers ::moodiyregistration_updated
-     */
-    public function test_moodiyregistration_updated_event(): void {
-        global $DB;
-
-        // Create a test record.
-        $record = new \stdClass();
-        $record->registrationid = 12345;
-        $record->site_uuid = 'test-uuid-123456789';
-        $record->site_url = 'https://example.moodle.org';
-        $record->timecreated = time();
-        $record->timemodified = time();
-        $recordid = $DB->insert_record('tool_moodiyregistration', $record);
-
-        // Create the event.
-        $event = moodiyregistration_updated::create([
-            'context' => \context_system::instance(),
-            'objectid' => $recordid,
-            'other' => [
-                'registrationid' => $record->registrationid,
-                'site_uuid' => $record->site_uuid,
-            ],
-        ]);
-
-        // Add record snapshot.
-        $record->id = $recordid;
-        $event->add_record_snapshot('tool_moodiyregistration', $record);
-
-        // Trigger the event and capture it.
-        $sink = $this->redirectEvents();
-        $event->trigger();
-        $events = $sink->get_events();
-        $sink->close();
-
-        // Check that the event was triggered.
-        $this->assertCount(1, $events);
-        $triggeredevent = reset($events);
-        $this->assertInstanceOf('\tool_moodiyregistration\event\moodiyregistration_updated', $triggeredevent);
-        $this->assertEquals($recordid, $triggeredevent->objectid);
-        $this->assertEquals('u', $triggeredevent->crud);
-    }
-
-    /**
-     * Test the update_request event.
      * @covers ::update_request
      */
-    public function test_update_request_event(): void {
+    public function test_registration_events(
+            string $eventclass,
+            string $crud,
+            int $edulevel,
+            bool $needssnapshot,
+            string $expectedclass
+    ): void {
         global $DB;
 
-        // Create a test record.
+        // Create a test record with a unique site_uuid to avoid conflicts.
         $record = new \stdClass();
         $record->registrationid = 12345;
-        $record->site_uuid = 'test-uuid-123456789';
+        $record->site_uuid = 'test-uuid-' . uniqid();
         $record->site_url = 'https://example.moodle.org';
         $record->timecreated = time();
         $record->timemodified = time();
         $recordid = $DB->insert_record('tool_moodiyregistration', $record);
 
         // Create the event.
-        $event = update_request::create([
+        $event = $eventclass::create([
             'context' => \context_system::instance(),
             'objectid' => $recordid,
             'other' => [
@@ -206,6 +122,18 @@ class events_test extends \advanced_testcase {
                 'site_uuid' => $record->site_uuid,
             ],
         ]);
+
+        // Add record snapshot if needed.
+        if ($needssnapshot) {
+            $record->id = $recordid;
+            $event->add_record_snapshot('tool_moodiyregistration', $record);
+        }
+
+        // Test event properties.
+        $this->assertEquals('tool_moodiyregistration', $event->objecttable);
+        $this->assertEquals($recordid, $event->objectid);
+        $this->assertEquals($crud, $event->crud);
+        $this->assertEquals($edulevel, $event->edulevel);
 
         // Trigger the event and capture it.
         $sink = $this->redirectEvents();
@@ -216,8 +144,22 @@ class events_test extends \advanced_testcase {
         // Check that the event was triggered.
         $this->assertCount(1, $events);
         $triggeredevent = reset($events);
-        $this->assertInstanceOf('\tool_moodiyregistration\event\update_request', $triggeredevent);
+        $this->assertInstanceOf($expectedclass, $triggeredevent);
         $this->assertEquals($recordid, $triggeredevent->objectid);
-        $this->assertEquals('r', $triggeredevent->crud);
+        $this->assertEquals($crud, $triggeredevent->crud);
+
+        // Delete the record to ensure clean state for next test.
+        $DB->delete_records('tool_moodiyregistration', ['id' => $recordid]);
+    }
+
+    /**
+     * Clean up after tests.
+     */
+    public function tearDown(): void {
+        // Clean up the database.
+        global $DB;
+        $DB->delete_records('tool_moodiyregistration');
+
+        parent::tearDown();
     }
 }

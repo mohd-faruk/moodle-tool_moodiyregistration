@@ -21,7 +21,7 @@
  * @category    test
  * @copyright   2025 VidyaMantra <pinky@vidyamantra.com>
  * @license     http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
- * @coversDefaultClass \tool_moodiyregistration\registeration
+ * @coversDefaultClass \tool_moodiyregistration\registration
  */
 
 namespace tool_moodiyregistration;
@@ -106,12 +106,12 @@ class registration_test extends \advanced_testcase {
         registration::save_site_info($data);
 
         // Perform the registration.
-        try {
-            registration::register($data, '/admin/tool/moodiyregistration/index.php');
-        } catch (\moodle_exception $e) {
-            // We expect a redirect exception since register() calls redirect().
-            $this->assertStringContainsString('registrationconfirm.php', $e->getMessage());
-        }
+        $response = registration::register($data, '/admin/tool/moodiyregistration/index.php');
+
+        // Mocked response to be returned.
+        $this->assertIsArray($response);
+        $this->assertTrue($response['success']);
+        $this->assertEquals(12345, $response['data']['id']);
 
         // Check that site is now registered.
         $record = $DB->get_record('tool_moodiyregistration', []);
@@ -242,38 +242,8 @@ class registration_test extends \advanced_testcase {
     }
 
     /**
-     * Test verification endpoint functionality.
-     *
-     * @covers ::verify_key
-     */
-    public function test_verification(): void {
-        global $CFG;
-
-        // Set up a verification key in the cache.
-        $cache = \cache::make_from_params(\cache_store::MODE_APPLICATION, 'tool_moodiyregistration', 'registration');
-        $verificationkey = 'test-verification-key-123';
-        $cache->set('verificationkey', $verificationkey);
-
-        // Create verification data with correct key.
-        $validdata = [
-            'verification_key' => $verificationkey,
-        ];
-
-        // Create verification data with incorrect key.
-        $invaliddata = [
-            'verification_key' => 'wrong-key',
-        ];
-
-        // Test verification with valid key.
-        $this->assertTrue($this->verify_key($validdata));
-
-        // Test verification with invalid key.
-        $this->assertFalse($this->verify_key($invaliddata));
-    }
-
-    /**
      * Test API URL configuration.
-     * @covers ::get_apiurl
+     * @covers \tool_moodiyregistration\api::get_apiurl
      */
     public function test_api_url_config(): void {
         // Test default API URL.
@@ -332,27 +302,11 @@ class registration_test extends \advanced_testcase {
         $generator->create_course(['enddate' => time() + 1000]);
 
         $generator->create_course(); // Course with no end date.
-        $siteinfo = registration::get_site_info();
+        $siteinfo = registration::get_site_metadata();
 
-        $this->assertNull($siteinfo['policyagreed']);
+        $this->assertEquals(3, $siteinfo['courses']);
         $this->assertEquals($CFG->dbtype, $siteinfo['dbtype']);
         $this->assertEquals('manual', $siteinfo['primaryauthtype']);
         $this->assertEquals(1, $siteinfo['coursesnodates']);
-    }
-
-    /**
-     * Helper method to simulate verification endpoint.
-     *
-     * @param array $data Verification data to test
-     * @return bool Whether verification succeeded
-     */
-    private function verify_key($data) {
-        $cache = \cache::make_from_params(\cache_store::MODE_APPLICATION, 'tool_moodiyregistration', 'registration');
-        $expected_verification_key = $cache->get('verificationkey');
-
-        $verification_key = isset($data['verification_key']) ?
-            clean_param($data['verification_key'], PARAM_ALPHANUMEXT) : '';
-
-        return !empty($verification_key) && hash_equals($expected_verification_key, $verification_key);
     }
 }
