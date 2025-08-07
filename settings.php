@@ -39,6 +39,31 @@ if ($hassiteconfig) {
         'https://moodiycloud.com',
         PARAM_URL
     ));
+    $redirect_url = new moodle_url('/admin/tool/moodiyregistration/index.php');
+    $redirectjs = new admin_setting_description(
+        'tool_moodiyregistration/redirectjs',
+        '',
+        '<div id="tool_moodiyregistration_redirect_container">
+            <script>
+                document.addEventListener("DOMContentLoaded", function() {
+                    const form = document.querySelector("#adminsettings");
+                    if (form) {
+                        form.addEventListener("submit", function() {
+                            // Store a flag in session storage
+                            sessionStorage.setItem("moodiy_settings_saved", "1");
+                        });
+                    }
+
+                    // Check if we\'re coming back after a save
+                    if (sessionStorage.getItem("moodiy_settings_saved") === "1") {
+                        sessionStorage.removeItem("moodiy_settings_saved");
+                        window.location.href = "' . $redirect_url->out(false) . '";
+                    }
+                });
+            </script>
+        </div>'
+    );
+    $settings->add($redirectjs);
 
     $ADMIN->add('tools', $settings);
 }

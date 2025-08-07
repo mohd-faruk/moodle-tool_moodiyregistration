@@ -33,6 +33,7 @@ admin_externalpage_setup('moodiyregistration');
 $unregistration = optional_param('unregistration', false, PARAM_BOOL);
 $confirm = optional_param('confirm', false, PARAM_BOOL);
 $vefiy = optional_param('action', '', PARAM_TEXT);
+$rtnurl = optional_param('returnurl', '', PARAM_LOCALURL);
 
 if ($unregistration && \tool_moodiyregistration\registration::is_registered()) {
     if ($confirm) {
@@ -54,7 +55,7 @@ if ($unregistration && \tool_moodiyregistration\registration::is_registered()) {
     exit;
 }
 $isinitialregistration = \tool_moodiyregistration\registration::is_registered();
-$returnurl = '/admin/tool/moodiyregistration/index.php';
+$returnurl = $rtnurl ?: '/admin/tool/moodiyregistration/index.php';
 
 $siteregistrationform = new \tool_moodiyregistration\moodiy_registration_form();
 $siteregistrationform->set_data(['returnurl' => $returnurl]);

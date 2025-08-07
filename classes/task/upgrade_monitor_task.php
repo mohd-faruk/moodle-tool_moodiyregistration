@@ -15,10 +15,10 @@
 // along with Moodle.  If not, see <https://www.gnu.org/licenses/>.
 
 /**
- * Plugin strings are defined here.
+ * A scheduled task.
  *
  * @package     tool_moodiyregistration
- * @category    string
+ * @category    task
  * @copyright   2025 VidyaMantra <pinky@vidyamantra.com>
  * @license     https://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */

@@ -95,7 +95,7 @@ class api {
     public static function update_registration(object $reginfo, array $params = []) {
         global $CFG;
 
-        $endpoint = self::get_apiurl() . '/site/register/'.$reginfo->registrationid;
+        $endpoint = self::get_apiurl() . '/site/register/';
         try {
             ksort($params);
             $payload = json_encode($params);
@@ -138,7 +138,7 @@ class api {
     public static function unregister_site(object $reginfo) {
         global $CFG;
 
-        $endpoint = self::get_apiurl() . '/site/register/'.$reginfo->registrationid;
+        $endpoint = self::get_apiurl() . '/site/register/';
         $params = [];
         $params['site_uuid'] = $reginfo->site_uuid;
         $params['timestamp'] = time();

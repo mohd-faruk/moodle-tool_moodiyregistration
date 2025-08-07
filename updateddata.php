@@ -125,8 +125,7 @@ if (!hash_equals($hmackey, $headerkey)) {
 // Validate the verification data.
 if (isset($postdata['site_uuid']) && isset($postdata['id'])) {
 
-    if ($DB->record_exists('tool_moodiyregistration', ['site_uuid' => $postdata['site_uuid'],
-     'registrationid' => $postdata['id']])) {
+    if ($DB->record_exists('tool_moodiyregistration', ['site_uuid' => $postdata['site_uuid']])) {
         $response = [
         'status' => 'success',
         'message' => 'ok',
@@ -138,7 +137,6 @@ if (isset($postdata['site_uuid']) && isset($postdata['id'])) {
             'context' => context_system::instance(),
             'objectid' => $postdata['id'],
             'other' => [
-                'registrationid' => $postdata['id'],
                 'site_uuid' => $postdata['site_uuid'],
             ],
         ]);
