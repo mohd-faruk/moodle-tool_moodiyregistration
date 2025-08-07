@@ -32,27 +32,7 @@ function xmldb_tool_moodiyregistration_install() {
     if (array_key_exists("auth_maintenance", $CFG->forced_plugin_settings)) {
         // If the site is set to register on Moodiy, proceed with registration.
         if (!empty($CFG->moodiysiteregistrationuuid)) {
-            $admin = get_admin();
-            $site = get_site();
-            $sitedata = new \stdClass();
-            $sitedata->site_name = format_string($site->fullname, true, ['context' => \context_course::instance(SITEID)]);
-            $sitedata->description = $site->summary;
-            $sitedata->admin_email = $admin->email;
-            $sitedata->country_code = $admin->country ?: $CFG->country;
-            $sitedata->language = explode('_', current_language())[0];
-            $sitedata->privacy = 'notdisplayed';
-            $sitedata->policyagreed = 0;
-            $sitedata->organisation_type = 'donotshare';
-            \tool_moodiyregistration\registration::save_site_info($sitedata);
-
-            // Create a new record in 'tool_moodiyregistration'.
-            $record = new \stdClass();
-            $record->site_uuid = $CFG->moodiysiteregistrationuuid;
-            $record->site_url = $CFG->wwwroot;
-            $record->timecreated = time();
-            $record->timemodified = time();
-
-            $id = $DB->insert_record('tool_moodiyregistration', $record);
+            \tool_moodiyregistration\registration::register_internal_site($CFG->moodiysiteregistrationuuid);
         } else {
             // Create adhoc task. Internal site but registration info not available.
             $postinstalltask = new \tool_moodiyregistration\task\internal_site_registration();

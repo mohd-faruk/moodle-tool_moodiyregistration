@@ -548,4 +548,36 @@ class registration {
             return;
         }
     }
+
+    /**
+     * Registers an internal site with Moodiy.
+     *
+     * @param string $uuid The UUID of the site.
+     * @return bool True on success, false on failure.
+     */
+    public static function register_internal_site($uuid) {
+        global $DB, $CFG;
+
+        $admin = get_admin();
+        $site = get_site();
+        $sitedata = new \stdClass();
+        $sitedata->site_name = format_string($site->fullname, true, ['context' => \context_course::instance(SITEID)]);
+        $sitedata->description = $site->summary;
+        $sitedata->admin_email = $admin->email;
+        $sitedata->country_code = $admin->country ?: $CFG->country;
+        $sitedata->language = explode('_', current_language())[0];
+        $sitedata->privacy = 'notdisplayed';
+        $sitedata->policyagreed = 0;
+        $sitedata->organisation_type = 'donotshare';
+        self::save_site_info($sitedata);
+
+        // Create a new record in 'tool_moodiyregistration'.
+        $record = new \stdClass();
+        $record->site_uuid = $uuid;
+        $record->site_url = $CFG->wwwroot;
+        $record->timecreated = time();
+        $record->timemodified = time();
+
+        return $DB->insert_record('tool_moodiyregistration', $record);
+    }
 }
