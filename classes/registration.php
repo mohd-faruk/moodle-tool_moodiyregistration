@@ -580,4 +580,21 @@ class registration {
 
         return $DB->insert_record('tool_moodiyregistration', $record);
     }
+
+    /**
+     * Get the site UUID.
+     *
+     * This method retrieves the site UUID from the registration record.
+     *
+     * @return string|null The site UUID or null if not registered.
+     */
+    public static function get_siteuuid() {
+        global $DB;
+
+        $registration = self::get_registration();
+        if ($registration) {
+            return $registration->site_uuid;
+        }
+        return null;
+    }
 }
