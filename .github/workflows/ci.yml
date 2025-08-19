@@ -15,15 +15,23 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        php: ["7.4", "8.0", "8.1", "8.2"]
+        php: ["8.1", "8.2"]
         moodle-branch:
-          ["MOODLE_440_STABLE", "MOODLE_450_STABLE", "MOODLE_500_STABLE"]
+          ["MOODLE_404_STABLE", "MOODLE_405_STABLE", "MOODLE_500_STABLE"]
         database: ["pgsql", "mariadb"]
+        # Define MariaDB version based on Moodle branch
+        include:
+          # Moodle 5.0 requires MariaDB 10.11.0+
+          - moodle-branch: "MOODLE_500_STABLE"
+            mariadb-version: "10.11"
+          # Moodle 4.x can use MariaDB 10.6
+          - moodle-branch: "MOODLE_404_STABLE"
+            mariadb-version: "10.6"
+          - moodle-branch: "MOODLE_405_STABLE"
+            mariadb-version: "10.6"
         exclude:
           # Exclude combinations that aren't supported
-          - php: "7.4"
-            moodle-branch: "MOODLE_500_STABLE"
-          - php: "8.0"
+          - php: "8.1"
             moodle-branch: "MOODLE_500_STABLE"
 
     services:
@@ -37,7 +45,8 @@ jobs:
         options: --health-cmd pg_isready --health-interval 10s --health-timeout 5s --health-retries 3
 
       mariadb:
-        image: mariadb:10.6
+        # Use the appropriate MariaDB version based on Moodle branch
+        image: mariadb:${{ matrix.mariadb-version || '10.6' }}
         env:
           MYSQL_USER: "root"
           MYSQL_ALLOW_EMPTY_PASSWORD: "true"
