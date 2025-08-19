@@ -15,30 +15,40 @@
 // along with Moodle.  If not, see <https://www.gnu.org/licenses/>.
 
 /**
- * Code to be executed after the plugin's database scheme has been installed is defined here.
+ * An adhoc task.
  *
  * @package     tool_moodiyregistration
- * @category    upgrade
+ * @category    task
  * @copyright   2025 VidyaMantra <pinky@vidyamantra.com>
  * @license     https://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 
+namespace tool_moodiyregistration\task;
+
+defined('MOODLE_INTERNAL') || die();
+
 /**
- * Perform the post-install procedures.
+ * Adhoc task to register internal site postinstallation of plugin.
  */
-function xmldb_tool_moodiyregistration_install() {
-    global $DB, $CFG;
-    // Check config if the site register on Moodiy .
-    if (array_key_exists("auth_maintenance", $CFG->forced_plugin_settings)) {
-        // If the site is set to register on Moodiy, proceed with registration.
+class internal_site_registration extends \core\task\adhoc_task {
+
+    /**
+     * Execute the task.
+     */
+    public function execute() {
+        global $CFG, $DB;
+
+        if (\tool_moodiyregistration\registration::is_registered()) {
+            mtrace('Site is already registered, skipping.');
+            // Delete the adhoc task record - it is finished.
+            $DB->delete_records('task_adhoc', ['id' => $this->get_id()]);
+            return;
+        }
+
         if (!empty($CFG->moodiysiteregistrationuuid)) {
             \tool_moodiyregistration\registration::register_internal_site($CFG->moodiysiteregistrationuuid);
         } else {
-            // Create adhoc task. Internal site but registration info not available.
-            $postinstalltask = new \tool_moodiyregistration\task\internal_site_registration();
-            $postinstalltask->set_next_run_time(time() + 1800); // 30 minutes delay.
-            core\task\manager::queue_adhoc_task($postinstalltask);
+            mtrace('Moodiy site registration uuid missing, skipping registration.');
         }
     }
-    return true;
 }

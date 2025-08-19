@@ -106,7 +106,6 @@ class events_test extends \advanced_testcase {
 
         // Create a test record with a unique site_uuid to avoid conflicts.
         $record = new \stdClass();
-        $record->registrationid = 12345;
         $record->site_uuid = 'test-uuid-' . uniqid();
         $record->site_url = 'https://example.moodle.org';
         $record->timecreated = time();
@@ -118,7 +117,6 @@ class events_test extends \advanced_testcase {
             'context' => \context_system::instance(),
             'objectid' => $recordid,
             'other' => [
-                'registrationid' => $record->registrationid,
                 'site_uuid' => $record->site_uuid,
             ],
         ]);

@@ -24,7 +24,7 @@
 namespace tool_moodiyregistration\task;
 
 /**
- * Simple task to run the moodiy registration cron.
+ * Task to update registration on moodiy after siteurl update.
  */
 class siteurl_update_task extends \core\task\scheduled_task {
 

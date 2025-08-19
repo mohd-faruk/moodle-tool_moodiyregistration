@@ -116,7 +116,6 @@ class registration_test extends \advanced_testcase {
         // Check that site is now registered.
         $record = $DB->get_record('tool_moodiyregistration', []);
         $this->assertNotEmpty($record);
-        $this->assertEquals(12345, $record->registrationid);
         $this->assertEquals('test-uuid-123456789', $record->site_uuid);
         $this->assertEquals($CFG->wwwroot, $record->site_url);
     }
@@ -130,7 +129,6 @@ class registration_test extends \advanced_testcase {
 
         // Insert a test record to simulate a registered site.
         $record = new \stdClass();
-        $record->registrationid = 12345;
         $record->site_uuid = 'test-uuid-123456789';
         $record->site_url = 'https://example.moodle.org';
         $record->timecreated = time();
@@ -168,7 +166,6 @@ class registration_test extends \advanced_testcase {
 
         // Insert a test record to simulate a registered site.
         $record = new \stdClass();
-        $record->registrationid = 12345;
         $record->site_uuid = 'test-uuid-123456789';
         $record->site_url = 'https://example.moodle.org';
         $record->timecreated = time();
@@ -216,7 +213,6 @@ class registration_test extends \advanced_testcase {
 
         // Insert a test record to simulate a registered site.
         $record = new \stdClass();
-        $record->registrationid = 12345;
         $record->site_uuid = 'test-uuid-123456789';
         $record->site_url = 'https://example.moodle.org';
         $record->timecreated = time();

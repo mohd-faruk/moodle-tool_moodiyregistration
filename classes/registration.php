@@ -136,16 +136,13 @@ class registration {
         }
         return null;
     }
-
     /**
-     * Calculates and prepares site information to send to the sites directory as a part of registration.
+     * Prepare site information.
      *
      * @param array $defaults default values for inputs in the registration form (if site was never registered before)
      * @return array site info
      */
-    public static function get_site_info($defaults = []) {
-        global $CFG, $DB;
-
+    public static function get_saved_form_data($defaults = []) {
         $siteinfo = [];
         foreach (self::FORM_FIELDS as $field) {
             $siteinfo[$field] = get_config('tool_moodiyregistration', 'site_'.$field);
@@ -153,10 +150,22 @@ class registration {
                 $siteinfo[$field] = array_key_exists($field, $defaults) ? $defaults[$field] : null;
             }
         }
-        $siteinfo['timestamp'] = time();
+        return $siteinfo;
+    }
+
+    /**
+     * Calculates and prepares site information for the registration form.
+     *
+     * @param array $defaults default values for inputs in the registration form (if site was never registered before)
+     * @return array site info
+     */
+    public static function get_site_info($defaults = []) {
+        global $CFG, $DB;
+
+        $siteinfo = self::get_saved_form_data($defaults);
 
         // Statistical data.
-        $metadata  = self::get_site_metadata($defaults = []);
+        $metadata  = self::get_site_metadata($defaults);
         return array_merge($siteinfo, $metadata);
     }
 
@@ -314,12 +323,10 @@ class registration {
                     throw new moodle_exception('errorconnect', 'tool_moodiyregistration', '', 'Invalid response from moodiy');
                 }
                 if (isset($response['data']) && is_array($response['data'])) {
-                    $registrationid = $response['data']['id'] ?? 0;
                     $secret = $response['data']['site_uuid'] ?? '';
                 }
                 // Create a new record in 'tool_moodiyregistration'.
                 $record = new stdClass();
-                $record->registrationid = $registrationid;
                 $record->site_uuid = $secret;
                 $record->site_url = $data['site_url'];
                 $record->timecreated = time();
@@ -333,7 +340,6 @@ class registration {
                     'context' => context_system::instance(),
                     'objectid' => $record->id,
                     'other' => [
-                        'registrationid' => $record->registrationid,
                         'site_uuid' => $record->site_uuid,
                     ],
                 ]);
@@ -382,7 +388,6 @@ class registration {
                 'context' => context_system::instance(),
                 'objectid' => $registration->id,
                 'other' => [
-                    'registrationid' => $registration->registrationid,
                     'site_uuid' => $registration->site_uuid,
                 ],
             ]);
@@ -417,13 +422,12 @@ class registration {
         try {
             $api = self::get_api_wrapper();
             $api->unregister_site($registration);
-            $DB->delete_records('tool_moodiyregistration', ['registrationid' => $registration->registrationid]);
+            $DB->delete_records('tool_moodiyregistration', ['site_uuid' => $registration->site_uuid]);
             // Trigger a site unregistration event.
             $event = \tool_moodiyregistration\event\moodiy_unregistration::create([
                 'context' => context_system::instance(),
                 'objectid' => $registration->id,
                 'other' => [
-                    'registrationid' => $registration->registrationid,
                     'site_uuid' => $registration->site_uuid,
                 ],
             ]);
@@ -442,6 +446,24 @@ class registration {
     }
 
     /**
+     * Calculates and prepares site information to send to the moodiy as a part of registration.
+     * Metadata should be json encoded.
+     *
+     * @return array site info
+     */
+    public static function get_siteinfo() {
+        global $CFG;
+        $siteinfo = self::get_saved_form_data();
+        $siteinfo['site_url'] = $CFG->wwwroot;
+        $siteinfo['timestamp'] = time();
+
+        // Statistical data.
+        $metadata  = self::get_site_metadata();
+        $siteinfo['site_metadata'] = json_encode($metadata);
+        return $siteinfo;
+    }
+
+    /**
      * Updates the site URL in the registration record.
      *
      * This method checks if the site is registered and if the site URL has changed.
@@ -456,9 +478,8 @@ class registration {
         if (self::is_registered()) {
             $registration = self::get_registration();
             if (strcmp($registration->site_url, $CFG->wwwroot) !== 0) {
-                $siteinfo = self::get_site_info();
+                $siteinfo = self::get_siteinfo();
                 $siteinfo['site_uuid'] = $registration->site_uuid;
-                $siteinfo['timestamp'] = time();
                 try {
                     api::update_registration($registration, $siteinfo);
 
@@ -474,7 +495,6 @@ class registration {
                         'context' => context_system::instance(),
                         'objectid' => $registration->id,
                         'other' => [
-                            'registrationid' => $registration->registrationid,
                             'site_uuid' => $registration->site_uuid,
                             'site_url' => $registration->site_url,
                         ],
@@ -504,7 +524,7 @@ class registration {
             return;
         }
 
-        $siteinfo = self::get_site_info();
+        $siteinfo = self::get_siteinfo();
         $siteinfo['site_uuid'] = $registration->site_uuid;
         try {
             $api = self::get_api_wrapper();
@@ -517,7 +537,6 @@ class registration {
                 'context' => context_system::instance(),
                 'objectid' => $registration->id,
                 'other' => [
-                    'registrationid' => $registration->registrationid,
                     'site_uuid' => $registration->site_uuid,
                     'site_url' => $registration->site_url,
                 ],
@@ -528,5 +547,54 @@ class registration {
             debugging('Error updating registration: ' . $e->getMessage());
             return;
         }
+    }
+
+    /**
+     * Registers an internal site with Moodiy.
+     *
+     * @param string $uuid The UUID of the site.
+     * @return bool True on success, false on failure.
+     */
+    public static function register_internal_site($uuid) {
+        global $DB, $CFG;
+
+        $admin = get_admin();
+        $site = get_site();
+        $sitedata = new \stdClass();
+        $sitedata->site_name = format_string($site->fullname, true, ['context' => \context_course::instance(SITEID)]);
+        $sitedata->description = $site->summary;
+        $sitedata->admin_email = $admin->email;
+        $sitedata->country_code = $admin->country ?: $CFG->country;
+        $sitedata->language = explode('_', current_language())[0];
+        $sitedata->privacy = 'notdisplayed';
+        $sitedata->policyagreed = 0;
+        $sitedata->organisation_type = 'donotshare';
+        self::save_site_info($sitedata);
+
+        // Create a new record in 'tool_moodiyregistration'.
+        $record = new \stdClass();
+        $record->site_uuid = $uuid;
+        $record->site_url = $CFG->wwwroot;
+        $record->timecreated = time();
+        $record->timemodified = time();
+
+        return $DB->insert_record('tool_moodiyregistration', $record);
+    }
+
+    /**
+     * Get the site UUID.
+     *
+     * This method retrieves the site UUID from the registration record.
+     *
+     * @return string|null The site UUID or null if not registered.
+     */
+    public static function get_siteuuid() {
+        global $DB;
+
+        $registration = self::get_registration();
+        if ($registration) {
+            return $registration->site_uuid;
+        }
+        return null;
     }
 }
