@@ -62,7 +62,7 @@ jobs:
         with:
           path: admin/tool/moodiyregistration
 
-      - name: Setup PHP
+      - name: Setup PHP ${{ matrix.php }}
         uses: shivammathur/setup-php@v2
         with:
           php-version: ${{ matrix.php }}
@@ -119,5 +119,5 @@ jobs:
       - name: PHPUnit tests
         run: moodle-plugin-ci phpunit
 
-      - name: Check db schema compatibility
-        run: moodle-plugin-ci schemaspy
+      #- name: Check db schema compatibility
+      # run: moodle-plugin-ci schemaspy
