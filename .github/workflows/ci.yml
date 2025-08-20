@@ -24,8 +24,6 @@ jobs:
           - moodle-branch: "MOODLE_500_STABLE"
             mariadb-version: "10.11"
           # Moodle 4.x can use MariaDB 10.6
-          - moodle-branch: "MOODLE_404_STABLE"
-            mariadb-version: "10.6"
           - moodle-branch: "MOODLE_405_STABLE"
             mariadb-version: "10.6"
         exclude:
