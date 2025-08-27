@@ -1,133 +1,19 @@
 # .github/workflows/ci.yml
 name: Moodiy Registration CI
 
-on:
-  push:
-    branches: [main, master, ci/cd]
-  pull_request:
-    branches: [main, master]
-  schedule:
-    - cron: "0 0 * * 0" # Weekly run to catch issues with new Moodle versions
+on: [push, pull_request]
 
 jobs:
-  test:
-    runs-on: ubuntu-latest
-    strategy:
-      fail-fast: false
-      matrix:
-        php: ["8.1", "8.2"]
-        moodle-branch: ["MOODLE_405_STABLE", "MOODLE_500_STABLE"]
-        database: ["pgsql", "mariadb"]
-        # Define MariaDB version based on Moodle branch
-        include:
-          # Moodle 5.0 requires MariaDB 10.11.0+
-          - moodle-branch: "MOODLE_500_STABLE"
-            mariadb-version: "10.11"
-          # Moodle 4.x can use MariaDB 10.6
-          - moodle-branch: "MOODLE_405_STABLE"
-            mariadb-version: "10.6"
-        exclude:
-          # Exclude combinations that aren't supported
-          - php: "8.1"
-            moodle-branch: "MOODLE_500_STABLE"
-
-    services:
-      postgres:
-        image: postgres:14
-        env:
-          POSTGRES_USER: "postgres"
-          POSTGRES_HOST_AUTH_METHOD: "trust"
-        ports:
-          - 5432:5432
-        options: --health-cmd pg_isready --health-interval 10s --health-timeout 5s --health-retries 3
-
-      mariadb:
-        # Use the appropriate MariaDB version based on Moodle branch
-        image: mariadb:${{ matrix.mariadb-version || '10.6' }}
-        env:
-          MYSQL_USER: "root"
-          MYSQL_ALLOW_EMPTY_PASSWORD: "true"
-          MYSQL_CHARACTER_SET_SERVER: "utf8mb4"
-          MYSQL_COLLATION_SERVER: "utf8mb4_unicode_ci"
-        ports:
-          - 3306:3306
-        options: --health-cmd="mysqladmin ping" --health-interval 10s --health-timeout 5s --health-retries 3
-
-    steps:
-      - name: Checkout plugin
-        uses: actions/checkout@v3
-        with:
-          path: admin/tool/moodiyregistration
-
-      - name: Setup PHP ${{ matrix.php }}
-        uses: shivammathur/setup-php@v2
-        with:
-          php-version: ${{ matrix.php }}
-          extensions: mbstring, pgsql, mysqli, zip, gd, xmlrpc, soap, intl, exif
-          ini-values: max_input_vars=5000
-          coverage: none
-
-      - name: Install required locales
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y locales
-          sudo locale-gen en_AU.UTF-8
-          sudo update-locale
-          locale -a
-
-      - name: Deploy moodle-plugin-ci
-        run: |
-          composer create-project -n --no-dev --prefer-dist moodlehq/moodle-plugin-ci ci ^4
-          echo $(cd ci/bin; pwd) >> $GITHUB_PATH
-
-      - name: Checkout Moodle
-        run: |
-          if [ "${{ matrix.database }}" = "pgsql" ]; then
-            DB_USER="postgres"
-          else
-            DB_USER="root"
-          fi
-
-          moodle-plugin-ci install --plugin ./admin/tool/moodiyregistration \
-            --db-host=127.0.0.1 \
-            --db-user=$DB_USER \
-            --db-pass="" \
-            --db-name=moodle \
-            --db-type=${{ matrix.database }} \
-            --branch=${{ matrix.moodle-branch }}
-        env:
-          DB: ${{ matrix.database }}
-          MOODLE_BRANCH: ${{ matrix.moodle-branch }}
-
-      - name: PHP Lint
-        run: moodle-plugin-ci phplint
-
-      - name: PHP Copy/Paste Detector
-        run: moodle-plugin-ci phpcpd
-
-      - name: PHP Mess Detector
-        run: moodle-plugin-ci phpmd
-
-      - name: Moodle Code Checker
-        run: moodle-plugin-ci codechecker || true
-
-      - name: Moodle PHPDoc Checker
-        run: moodle-plugin-ci phpdoc || true
-
-      - name: Validating
-        run: moodle-plugin-ci validate
-
-      - name: Check upgrade savepoints
-        run: moodle-plugin-ci savepoints
-
-      - name: Mustache Lint
-        run: moodle-plugin-ci mustache
-
-      - name: Grunt
-        run: moodle-plugin-ci grunt
-
-      - name: PHPUnit tests
-        run: moodle-plugin-ci phpunit
-
-      #- name: Check db schema compatibility
-      # run: moodle-plugin-ci schemaspy
+  ci:
+    uses: catalyst/catalyst-moodle-workflows/.github/workflows/ci.yml@main
+    #secrets:
+    # Required if you plan to publish (uncomment the below)
+    # moodle_org_token: ${{ secrets.MOODLE_ORG_TOKEN }}
+    with:
+      #codechecker_max_warnings: 0 # CI should now fail on phpcs / code checker warnings.
+      disable_phpdoc: true
+      disable_phpcpd: true
+      disable_phpcs: true
+      disable_behat: true
+      disable_grunt: true
+      disable_release: true
