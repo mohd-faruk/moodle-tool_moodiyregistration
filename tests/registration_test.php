@@ -244,7 +244,7 @@ class registration_test extends \advanced_testcase {
     public function test_api_url_config(): void {
         // Test default API URL.
         set_config('apiurl', null, 'tool_moodiyregistration');
-        $this->assertEquals('https://moodiycloud.com/api', api::get_apiurl());
+        $this->assertEquals('https://api.moodiycloud.com/api', api::get_apiurl());
 
         // Test custom API URL.
         $customurl = 'https://custom.moodiycloud.com';
