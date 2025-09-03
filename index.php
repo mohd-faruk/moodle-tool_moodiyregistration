@@ -97,6 +97,12 @@ if (\tool_moodiyregistration\registration::is_registered()) {
 
 // Heading.
 if (\tool_moodiyregistration\registration::is_registered()) {
+    // Display site-uuid.
+    $siteuuid = \tool_moodiyregistration\registration::get_siteuuid();
+    $summary = html_writer::tag('summary', get_string('viewsiteuuid', 'tool_moodiyregistration'));
+    $uuidContent = html_writer::tag('div', get_string('siteuuid', 'tool_moodiyregistration', $siteuuid));
+    echo html_writer::tag('details', $summary . $uuidContent, ['class' => 'alert alert-info']);
+
     echo $OUTPUT->heading(get_string('registerwithmoodiyupdate', 'tool_moodiyregistration'));
 } else if ($isinitialregistration) {
     echo $OUTPUT->heading(get_string('registerwithmoodiycomplete', 'tool_moodiyregistration'));

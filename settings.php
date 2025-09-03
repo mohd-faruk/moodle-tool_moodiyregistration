@@ -36,7 +36,7 @@ if ($hassiteconfig) {
         'tool_moodiyregistration/apiurl',
         new lang_string('apiurl', 'tool_moodiyregistration'),
         new lang_string('apiurl_desc', 'tool_moodiyregistration'),
-        'https://moodiycloud.com',
+        'https://api.moodiycloud.com',
         PARAM_URL
     ));
     $redirect_url = new moodle_url('/admin/tool/moodiyregistration/index.php');
