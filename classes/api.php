@@ -48,7 +48,7 @@ class api {
     public static function get_apiurl() {
         $apiurl = get_config('tool_moodiyregistration', 'apiurl');
         if (empty($apiurl)) {
-            $apiurl = 'https://moodiycloud.com';
+            $apiurl = 'https://api.moodiycloud.com';
         }
         return rtrim($apiurl, '/') . '/api';
     }
