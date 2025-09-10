@@ -39,6 +39,13 @@ if ($hassiteconfig) {
         'https://api.moodiycloud.com',
         PARAM_URL
     ));
+    $settings->add(new admin_setting_configtext(
+        'tool_moodiyregistration/portalurl',
+        new lang_string('portalurl', 'tool_moodiyregistration'),
+        new lang_string('portalurl_desc', 'tool_moodiyregistration'),
+        'https://portal.moodiycloud.com',
+        PARAM_URL
+    ));
     $redirect_url = new moodle_url('/admin/tool/moodiyregistration/index.php');
     $redirectjs = new admin_setting_description(
         'tool_moodiyregistration/redirectjs',
