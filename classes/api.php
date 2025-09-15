@@ -46,7 +46,9 @@ class api {
      * @return string The API URL.
      */
     public static function get_apiurl() {
-        $apiurl = get_config('tool_moodiyregistration', 'apiurl');
+        global $CFG;
+
+        $apiurl = $CFG->moodiy_api_url;
         if (empty($apiurl)) {
             $apiurl = 'https://api.moodiycloud.com';
         }

@@ -25,8 +25,6 @@
 
 defined('MOODLE_INTERNAL') || die();
 
-$string['apiurl'] = 'API URL';
-$string['apiurl_desc'] = 'The URL of the Moodiy API. This is used to communicate with the Moodiy service for site registration and updates.';
 $string['errorregistrationupdate'] = 'An error occurred during registration update . Error: {$a}';
 $string['errorunregister'] = 'There was an error while unregistering your site. Error: {$a}';
 $string['eventmoodiyregistration'] = 'Site registered with Moodiy';
@@ -38,8 +36,6 @@ $string['eventmoodiyunregistration_desc'] = 'User {$a->userid} has unregistered 
 $string['pleaserefreshregistration'] = 'Your site is registered. Registration last updated {$a}.<br />Your registration will be kept up to date. You can also manually update your registration at any time.';
 $string['pleaserefreshregistrationunknown'] = 'Your site has been registered but the registration date is unknown. Please update your registration using the \'Update registration\' button.';
 $string['pluginname'] = 'Moodiy registration';
-$string['portalurl'] = 'Portal URL';
-$string['portalurl_desc'] = 'The URL of the Moodiy portal. This is used to redirect the user to purchase a plan or manage their subscription.';
 $string['registerwithmoodiy'] = 'Register your site with Moodiy';
 $string['registerwithmoodiycomplete'] = 'Complete your site registration.';
 $string['registerwithmoodiyremove'] = 'You are about to unregister your site. You will no longer receive security alert notifications and users will not be able to receive push notifications from your site to their Moodle app. However, you will be able to re-register at any time! Are you sure you want to continue?';

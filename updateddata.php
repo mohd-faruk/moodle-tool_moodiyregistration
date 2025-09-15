@@ -91,7 +91,7 @@ function get_all_headers() {
 }
 
 // Get header key.
-$headers = getallheaders();
+$headers = get_all_headers();
 foreach ($headers as $key => $value) {
     if (strtolower($key) === 'key') {
         $headerkey = $value;
