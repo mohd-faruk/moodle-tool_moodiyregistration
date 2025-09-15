@@ -39,6 +39,8 @@ use moodle_url;
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 class api {
+    /** @var string The Moodiy API URL */
+    const MOODIY_API_URL = 'https://api.moodiycloud.com';
 
     /**
      * Get the API URL for Moodiy.
@@ -48,10 +50,7 @@ class api {
     public static function get_apiurl() {
         global $CFG;
 
-        $apiurl = $CFG->moodiy_api_url;
-        if (empty($apiurl)) {
-            $apiurl = 'https://api.moodiycloud.com';
-        }
+        $apiurl = $CFG->moodiy_api_url ?? self::MOODIY_API_URL;
         return rtrim($apiurl, '/') . '/api';
     }
 

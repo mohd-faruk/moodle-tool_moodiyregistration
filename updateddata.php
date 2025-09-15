@@ -127,14 +127,14 @@ if (isset($postdata['site_uuid']) && isset($postdata['id'])) {
 
     if ($DB->record_exists('tool_moodiyregistration', ['site_uuid' => $postdata['site_uuid']])) {
         $response = [
-        'status' => 'success',
-        'message' => 'ok',
+            'status' => 'success',
+            'message' => 'ok',
         ];
         echo json_encode($response);
 
         // Trigger a site registration update request event.
         $event = \tool_moodiyregistration\event\update_request::create([
-            'context' => context_system::instance(),
+            'context' => \context_system::instance(),
             'objectid' => $postdata['id'],
             'other' => [
                 'site_uuid' => $postdata['site_uuid'],
