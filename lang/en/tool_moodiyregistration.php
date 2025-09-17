@@ -25,8 +25,6 @@
 
 defined('MOODLE_INTERNAL') || die();
 
-$string['apiurl'] = 'API URL';
-$string['apiurl_desc'] = 'The URL of the Moodiy API. This is used to communicate with the Moodiy service for site registration and updates.';
 $string['errorregistrationupdate'] = 'An error occurred during registration update . Error: {$a}';
 $string['errorunregister'] = 'There was an error while unregistering your site. Error: {$a}';
 $string['eventmoodiyregistration'] = 'Site registered with Moodiy';
