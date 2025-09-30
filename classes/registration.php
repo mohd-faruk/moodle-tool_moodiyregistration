@@ -48,6 +48,8 @@ class registration {
     const FORM_FIELDS = ['policyagreed', 'language', 'country_code', 'privacy',
         'admin_email', 'site_name', 'description', 'organisation_type'];
 
+    const MOODIYURL = 'https://moodiycloud.com';
+
     /** @var stdClass cached site registration information */
     protected static $registration = null;
 
@@ -112,6 +114,18 @@ class registration {
         }
 
         return null;
+    }
+
+    /**
+     * Summary of data that will be sent to the sites directory.
+     *
+     * @param array $siteinfo result of get_site_info()
+     * @return string
+     */
+    public static function get_stats_summary($siteinfo) {
+        $summary = \core\hub\registration::get_stats_summary($siteinfo);
+        $summary = preg_replace('/<p>.*?<\/p>/s', '<p>' . get_string('sendfollowinginfo_help', 'tool_moodiyregistration') . '</p>', $summary, 1);
+        return $summary;
     }
 
     /**

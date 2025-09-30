@@ -57,3 +57,4 @@ $string['updaterequest'] = 'Update request from Moodiy';
 $string['updaterequest_desc'] = 'The external user requested for registration with Moodiy with registration id \'{$a}\'.';
 $string['upgrade_monitor_task'] = 'Monitor core/plugins upgrade and update registration on Moodiy';
 $string['viewsiteuuid'] = 'Click to view site UUID';
+$string['sendfollowinginfo_help'] = 'The following information will be sent to Moodiycloud each time your site registration is updated (by default weekly, when the \'Site registration\' scheduled task is run). The information contributes to overall statistics only and will not be made public on any site listing.';
