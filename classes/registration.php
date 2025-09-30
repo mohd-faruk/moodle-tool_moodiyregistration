@@ -48,6 +48,7 @@ class registration {
     const FORM_FIELDS = ['policyagreed', 'language', 'country_code', 'privacy',
         'admin_email', 'site_name', 'description', 'organisation_type'];
 
+    /** @var string Moodiy API URL */
     const MOODIYURL = 'https://moodiycloud.com';
 
     /** @var stdClass cached site registration information */
@@ -123,8 +124,60 @@ class registration {
      * @return string
      */
     public static function get_stats_summary($siteinfo) {
-        $summary = \core\hub\registration::get_stats_summary($siteinfo);
-        $summary = preg_replace('/<p>.*?<\/p>/s', '<p>' . get_string('sendfollowinginfo_help', 'tool_moodiyregistration') . '</p>', $summary, 1);
+        $fieldsneedconfirm = \core\hub\registration::get_new_registration_fields();
+        $summary = html_writer::tag('p', get_string('sendfollowinginfo_help', 'tool_moodiyregistration')) .
+            html_writer::start_tag('ul');
+
+        $mobileservicesenabled = $siteinfo['mobileservicesenabled'] ? get_string('yes') : get_string('no');
+        $mobilenotificationsenabled = $siteinfo['mobilenotificationsenabled'] ? get_string('yes') : get_string('no');
+        $moodlerelease = $siteinfo['moodlerelease'];
+        if (preg_match('/^(\d+\.\d.*?)[\. ]/', $moodlerelease, $matches)) {
+            $moodlerelease = $matches[1];
+        }
+        $pluginusagelinks = [
+            'overview' => new moodle_url('/admin/plugins.php'),
+            'activities' => new moodle_url('/admin/modules.php'),
+            'blocks' => new moodle_url('/admin/blocks.php'),
+        ];
+        $senddata = [
+            'moodlerelease' => get_string('sitereleasenum', 'hub', $moodlerelease),
+            'courses' => get_string('coursesnumber', 'hub', $siteinfo['courses']),
+            'users' => get_string('usersnumber', 'hub', $siteinfo['users']),
+            'activeusers' => get_string('activeusersnumber', 'hub', $siteinfo['activeusers']),
+            'enrolments' => get_string('roleassignmentsnumber', 'hub', $siteinfo['enrolments']),
+            'posts' => get_string('postsnumber', 'hub', $siteinfo['posts']),
+            'questions' => get_string('questionsnumber', 'hub', $siteinfo['questions']),
+            'resources' => get_string('resourcesnumber', 'hub', $siteinfo['resources']),
+            'badges' => get_string('badgesnumber', 'hub', $siteinfo['badges']),
+            'issuedbadges' => get_string('issuedbadgesnumber', 'hub', $siteinfo['issuedbadges']),
+            'participantnumberaverage' => get_string('participantnumberaverage', 'hub',
+                format_float($siteinfo['participantnumberaverage'], 2)),
+            'activeparticipantnumberaverage' => get_string('activeparticipantnumberaverage', 'hub',
+                format_float($siteinfo['activeparticipantnumberaverage'], 2)),
+            'modulenumberaverage' => get_string('modulenumberaverage', 'hub',
+                format_float($siteinfo['modulenumberaverage'], 2)),
+            'mobileservicesenabled' => get_string('mobileservicesenabled', 'hub', $mobileservicesenabled),
+            'mobilenotificationsenabled' => get_string('mobilenotificationsenabled', 'hub', $mobilenotificationsenabled),
+            'registereduserdevices' => get_string('registereduserdevices', 'hub', $siteinfo['registereduserdevices']),
+            'registeredactiveuserdevices' => get_string('registeredactiveuserdevices', 'hub',
+             $siteinfo['registeredactiveuserdevices']),
+            'analyticsenabledmodels' => get_string('analyticsenabledmodels', 'hub', $siteinfo['analyticsenabledmodels']),
+            'analyticspredictions' => get_string('analyticspredictions', 'hub', $siteinfo['analyticspredictions']),
+            'analyticsactions' => get_string('analyticsactions', 'hub', $siteinfo['analyticsactions']),
+            'analyticsactionsnotuseful' => get_string('analyticsactionsnotuseful', 'hub', $siteinfo['analyticsactionsnotuseful']),
+            'dbtype' => get_string('dbtype', 'hub', $siteinfo['dbtype']),
+            'coursesnodates' => get_string('coursesnodates', 'hub', $siteinfo['coursesnodates']),
+            'sitetheme' => get_string('sitetheme', 'hub', $siteinfo['sitetheme']),
+            'primaryauthtype' => get_string('primaryauthtype', 'hub', $siteinfo['primaryauthtype']),
+            'pluginusage' => get_string('pluginusagedata', 'hub', $pluginusagelinks),
+            'aiusage' => get_string('aiusagestats', 'hub', self::get_ai_usage_time_range(true)),
+        ];
+
+        foreach ($senddata as $key => $str) {
+            $class = in_array($key, $fieldsneedconfirm) ? ' needsconfirmation mark' : '';
+            $summary .= html_writer::tag('li', $str, ['class' => 'site' . $key . $class]);
+        }
+        $summary .= html_writer::end_tag('ul');
         return $summary;
     }
 
@@ -244,7 +297,7 @@ class registration {
         $siteinfo['pluginusage'] = json_encode(\core\hub\registration::get_plugin_usage_data());
 
         // AI usage data.
-        $aiusagedata = \core\hub\registration::get_ai_usage_data();
+        $aiusagedata = self::get_ai_usage_data();
         $siteinfo['aiusage'] = !empty($aiusagedata) ? json_encode($aiusagedata) : '';
 
         // Primary auth type.
@@ -457,6 +510,119 @@ class registration {
         }
 
         return true;
+    }
+
+    /**
+     * Get the time range to use in collected and reporting AI usage data.
+     *
+     * @param bool $format Use true to format timestamp.
+     * @return array
+     */
+    private static function get_ai_usage_time_range(bool $format = false): array {
+        global $DB, $CFG;
+
+        // We will try and use the last time this site was last registered for our 'from' time.
+        // Otherwise, default to using one week's worth of data to roughly match the site rego scheduled task.
+        $timenow = \core\di::get(\core\clock::class)->time();
+        $defaultfrom = $timenow - WEEKSECS;
+        $timeto = $timenow;
+        $params = [
+            'site_url' => $CFG->wwwroot,
+        ];
+        $lastregistered = $DB->get_field('tool_moodiyregistration', 'timemodified', $params);
+        $timefrom = $lastregistered ? (int)$lastregistered : $defaultfrom;
+
+        if ($format) {
+            $timefrom = userdate($timefrom);
+            $timeto = userdate($timeto);
+        }
+
+        return [
+            'timefrom' => $timefrom,
+            'timeto' => $timeto,
+        ];
+    }
+
+    /**
+     * Get AI usage data.
+     *
+     * @return array
+     */
+    public static function get_ai_usage_data(): array {
+        global $DB;
+
+        $params = self::get_ai_usage_time_range();
+
+        $sql = "SELECT aar.*
+                  FROM {ai_action_register} aar
+                 WHERE aar.timecompleted >= :timefrom
+                   AND aar.timecompleted <= :timeto";
+
+        $actions = $DB->get_records_sql($sql, $params);
+
+        // Build data for site info reporting.
+        $data = [];
+
+        foreach ($actions as $action) {
+            $provider = $action->provider;
+            $actionname = $action->actionname;
+
+            // Initialise data structure.
+            if (!isset($data[$provider][$actionname])) {
+                $data[$provider][$actionname] = [
+                    'success_count' => 0,
+                    'fail_count' => 0,
+                    'times' => [],
+                    'errors' => [],
+                ];
+            }
+
+            if ($action->success === '1') {
+                $data[$provider][$actionname]['success_count'] += 1;
+                // Collect AI processing times for averaging.
+                $data[$provider][$actionname]['times'][] = (int)$action->timecompleted - (int)$action->timecreated;
+
+            } else {
+                $data[$provider][$actionname]['fail_count'] += 1;
+                // Collect errors for determing the predominant one.
+                $data[$provider][$actionname]['errors'][] = $action->errorcode;
+            }
+        }
+
+        // Parse the errors and everage the times, then add them to the data.
+        foreach ($data as $p => $provider) {
+            foreach ($provider as $a => $actionname) {
+                if (isset($data[$p][$a]['errors'])) {
+                    // Create an array with the error codes counted.
+                    $errors = array_count_values($data[$p][$a]['errors']);
+                    if (!empty($errors)) {
+                        // Sort values descending and convert to an array of error codes (most predominant will be at start).
+                        arsort($errors);
+                        $errors = array_keys($errors);
+                        $data[$p][$a]['predominant_error'] = $errors[0];
+                    }
+                    unset($data[$p][$a]['errors']);
+                }
+
+                if (isset($data[$p][$a]['times'])) {
+                    $count = count($data[$p][$a]['times']);
+                    if ($count > 0) {
+                        // Average the time to perform the action (seconds).
+                        $totaltime = array_sum($data[$p][$a]['times']);
+                        $data[$p][$a]['average_time'] = round($totaltime / $count);
+
+                    }
+                }
+                unset($data[$p][$a]['times']);
+            }
+        }
+
+        // Include the time range used to help interpret the data.
+        if (!empty($data)) {
+            $data['time_range'] = $params;
+        }
+
+        return $data;
     }
 
     /**
