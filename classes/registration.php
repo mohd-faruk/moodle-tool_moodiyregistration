@@ -777,4 +777,84 @@ class registration {
         }
         return null;
     }
+
+    /**
+     * Check for Moodiycloud products, if found prevent unregistration.
+     *
+     * @return bool
+     */
+    public static function can_unregister(): bool {
+        return !get_config('tool_moodiymobile', 'enabled');
+    }
+
+    /**
+     * Display a warning box with a single continue button.
+     *
+     * @param string $message The warning message to display.
+     * @param string|moodle_url|\single_button $continue The URL or button for the continue action.
+     * @param array $displayoptions Optional display options:
+     *      - confirmtitle: Title of the warning box (default: 'Warning').
+     *      - continuestr: Text for the continue button (default: 'Continue').
+     *      - type: Button type for the continue button (default: primary).
+     *
+     * @return string The HTML output of the warning box.
+     * @throws coding_exception If the $continue parameter is invalid.
+     */
+    public static function warningbox($message, $continue, array $displayoptions = []) {
+        global $OUTPUT;
+        // Check existing displayoptions.
+        $displayoptions['confirmtitle'] = $displayoptions['confirmtitle'] ?? get_string('warning', 'core');
+        $displayoptions['continuestr'] = $displayoptions['continuestr'] ?? get_string('continue');
+
+        if ($continue instanceof \single_button) {
+            // Continue button should be primary if set to secondary type as it is the fefault.
+            if ($continue->type === \single_button::BUTTON_SECONDARY) {
+                $continue->type = \single_button::BUTTON_PRIMARY;
+            }
+        } else if (is_string($continue)) {
+            $continue = new \single_button(
+                new moodle_url($continue),
+                $displayoptions['continuestr'],
+                'post',
+                $displayoptions['type'] ?? \single_button::BUTTON_PRIMARY
+            );
+        } else if ($continue instanceof moodle_url) {
+            $continue = new \single_button(
+                $continue,
+                $displayoptions['continuestr'],
+                'post',
+                $displayoptions['type'] ?? \single_button::BUTTON_PRIMARY
+            );
+        } else {
+            throw new coding_exception('The continue param to $OUTPUT->confirm() must be either
+             a URL (string/moodle_url) or a single_button instance.');
+        }
+        // Prepare the modal dialog.
+        $attributes = [
+            'role' => 'alertdialog',
+            'aria-labelledby' => 'modal-header',
+            'aria-describedby' => 'modal-body',
+            'aria-modal' => 'true',
+        ];
+
+        $output = $OUTPUT->box_start('generalbox modal modal-dialog modal-in-page show', 'notice', $attributes);
+        $output .= $OUTPUT->box_start('modal-content', 'modal-content');
+        $output .= $OUTPUT->box_start('modal-header px-3', 'modal-header');
+        $output .= html_writer::tag('h4', $displayoptions['confirmtitle']);
+        $output .= $OUTPUT->box_end();
+        $attributes = [
+            'role' => 'alert',
+            'data-aria-autofocus' => 'true',
+        ];
+        $output .= $OUTPUT->box_start('modal-body', 'modal-body', $attributes);
+        $output .= html_writer::tag('p', $message);
+        $output .= $OUTPUT->box_end();
+        $output .= $OUTPUT->box_start('modal-footer', 'modal-footer');
+        $output .= html_writer::tag('div', $OUTPUT->render($continue), ['class' => 'buttons']);
+        $output .= $OUTPUT->box_end();
+        $output .= $OUTPUT->box_end();
+        $output .= $OUTPUT->box_end();
+        return $output;
+    }
+
 }

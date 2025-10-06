@@ -83,7 +83,7 @@ $verification_key = isset($postdata['verification_key']) ?
 
 // Optional: Log the request for debugging (enable only when needed).
 if (!empty($CFG->debugdeveloper)) {
-    error_log('Verification request received: ' . var_export($postdata, true));
+    debugging('Verification request received: ' . var_export($postdata, true));
 }
 
 // Validate the verification key.
