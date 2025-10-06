@@ -49,13 +49,13 @@ if ($unregistration && \tool_moodiyregistration\registration::is_registered()) {
     if (\tool_moodiyregistration\registration::can_unregister()) {
         echo $OUTPUT->confirm(
             get_string('registerwithmoodiyremove', 'tool_moodiyregistration'),
-            new moodle_url(new moodle_url('/admin/tool/moodiyregistration/index.php', ['unregistration' => 1, 'confirm' => 1])),
-            new moodle_url(new moodle_url('/admin/tool/moodiyregistration/index.php'))
+            new moodle_url('/admin/tool/moodiyregistration/index.php', ['unregistration' => 1, 'confirm' => 1]),
+            new moodle_url('/admin/tool/moodiyregistration/index.php'),
         );
     } else {
         echo \tool_moodiyregistration\registration::warningbox(
             get_string('unregistration-warning', 'tool_moodiyregistration'),
-            new moodle_url(new moodle_url('/admin/tool/moodiyregistration/index.php'))
+            new moodle_url('/admin/tool/moodiyregistration/index.php'),
         );
     }
 
