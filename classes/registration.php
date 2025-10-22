@@ -744,7 +744,7 @@ class registration {
         $sitedata->site_name = format_string($site->fullname, true, ['context' => \context_course::instance(SITEID)]);
         $sitedata->description = $site->summary;
         $sitedata->admin_email = $admin->email;
-        $sitedata->country_code = $admin->country ?: $CFG->country;
+        $sitedata->country_code = $admin->country ?: ($CFG->country ?: '');
         $sitedata->language = explode('_', current_language())[0];
         $sitedata->privacy = 'notdisplayed';
         $sitedata->policyagreed = 0;

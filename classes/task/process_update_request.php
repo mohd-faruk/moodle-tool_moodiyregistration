@@ -15,34 +15,27 @@
 // along with Moodle.  If not, see <https://www.gnu.org/licenses/>.
 
 /**
- * Observer class containing methods monitoring various events.
+ * An adhoc task.
  *
  * @package     tool_moodiyregistration
+ * @category    task
  * @copyright   2025 VidyaMantra <pinky@vidyamantra.com>
  * @license     https://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 
-namespace tool_moodiyregistration;
+namespace tool_moodiyregistration\task;
+
+defined('MOODLE_INTERNAL') || die();
 
 /**
- * Class eventobservers
- *
- * This class contains methods that respond to various events in Moodle.
- *
- * @package tool_moodiyregistration
+ * Adhoc task to process update requests from Moodiy.
  */
-class eventobservers {
-    /**
-     * Observer method to response when request received form
-     * moodiy to pull registration update.
-     *
-     * This method is triggered when request to pull updated data received.
-     *
-     * @param \tool_moodiyregistration\event\update_request $event The event object.
-     */
-    public static function process_update_request(\tool_moodiyregistration\event\update_request $event) {
+class process_update_request extends \core\task\adhoc_task {
 
-        // Inactivate registration with Moodidy.
+    /**
+     * Execute the task.
+     */
+    public function execute() {
         \tool_moodiyregistration\registration::update_registration();
     }
 }

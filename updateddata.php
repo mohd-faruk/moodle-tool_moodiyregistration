@@ -114,7 +114,7 @@ $hmackey = hash_hmac('sha256', $payload, $postdata['site_uuid']);
 
 if (!hash_equals($hmackey, $headerkey)) {
     // Invalid HMAC key.
-    http_response_code(403); // Forbidden.
+    http_response_code(400); // Bad Request.
     echo json_encode([
         'status' => 'error',
         'message' => 'Invalid HMAC key',
@@ -131,6 +131,10 @@ if (isset($postdata['site_uuid']) && isset($postdata['id'])) {
             'message' => 'ok',
         ];
         echo json_encode($response);
+
+        // Create task to process the update request.
+        $task = new \tool_moodiyregistration\task\process_update_request();
+        core\task\manager::queue_adhoc_task($task);
 
         // Trigger a site registration update request event.
         $event = \tool_moodiyregistration\event\update_request::create([
