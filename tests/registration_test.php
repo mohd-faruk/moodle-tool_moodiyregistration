@@ -290,4 +290,24 @@ class registration_test extends \advanced_testcase {
         $this->assertEquals('manual', $siteinfo['primaryauthtype']);
         $this->assertEquals(1, $siteinfo['coursesnodates']);
     }
+
+    /**
+     * Test can_unregister method.
+     * @covers ::can_unregister
+     */
+    public function test_can_unregister_when_mobile_disabled() {
+        // Simulate mobile plugin disabled.
+        set_config('enabled', 0, 'tool_moodiymobile');
+        $this->assertTrue(registration::can_unregister());
+    }
+
+    /**
+     * Test can_unregister method when mobile plugin is enabled.
+     * @covers ::can_unregister
+     */
+    public function test_can_unregister_when_mobile_enabled() {
+        // Simulate mobile plugin enabled.
+        set_config('enabled', 1, 'tool_moodiymobile');
+        $this->assertFalse(registration::can_unregister());
+    }
 }

@@ -744,7 +744,7 @@ class registration {
         $sitedata->site_name = format_string($site->fullname, true, ['context' => \context_course::instance(SITEID)]);
         $sitedata->description = $site->summary;
         $sitedata->admin_email = $admin->email;
-        $sitedata->country_code = $admin->country ?: $CFG->country;
+        $sitedata->country_code = $admin->country ?: ($CFG->country ?: '');
         $sitedata->language = explode('_', current_language())[0];
         $sitedata->privacy = 'notdisplayed';
         $sitedata->policyagreed = 0;
@@ -777,4 +777,55 @@ class registration {
         }
         return null;
     }
+
+    /**
+     * Check for Moodiycloud products, if found prevent unregistration.
+     *
+     * @return bool
+     */
+    public static function can_unregister(): bool {
+        return !get_config('tool_moodiymobile', 'enabled');
+    }
+
+    /**
+     * Display a warning box with a single continue button.
+     *
+     * @param string $message The warning message to display.
+     * @param string|moodle_url|\single_button $continue The URL or button for the continue action.
+     * @param array $displayoptions Optional display options:
+     *      - confirmtitle: Title of the warning box (default: 'Warning').
+     *      - continuestr: Text for the continue button (default: 'Continue').
+     *      - type: Button type for the continue button (default: primary).
+     *
+     * @return string The HTML output of the warning box.
+     * @throws coding_exception If the $continue parameter is invalid.
+     */
+    public static function warningbox($message, $continue, array $displayoptions = []) {
+        global $PAGE;
+
+        $renderer = $PAGE->get_renderer('tool_moodiyregistration');
+        $displayoptions['confirmtitle'] = $displayoptions['confirmtitle'] ?? get_string('warning', 'core');
+        $displayoptions['continuestr'] = $displayoptions['continuestr'] ?? get_string('continue');
+
+        if ($continue instanceof \single_button) {
+            if ($continue->type === \single_button::BUTTON_SECONDARY) {
+                $continue->type = \single_button::BUTTON_PRIMARY;
+            }
+            $continuehtml = $renderer->render($continue);
+        } else if (is_string($continue) || $continue instanceof \moodle_url) {
+            $url = is_string($continue) ? new \moodle_url($continue) : $continue;
+            $continuehtml = $renderer->render(new \single_button(
+                $url,
+                $displayoptions['continuestr'],
+                'post',
+                $displayoptions['type'] ?? \single_button::BUTTON_PRIMARY
+            ));
+        } else {
+            throw new \coding_exception('The continue param must be either
+             a URL (string/moodle_url) or a single_button instance.');
+        }
+
+        return $renderer->warningbox($message, $continuehtml, $displayoptions);
+    }
+
 }
