@@ -25,6 +25,7 @@
 
 defined('MOODLE_INTERNAL') || die();
 
+$string['aiusagestats'] = 'AI usage stats ({$a->timefrom} - {$a->timeto})';
 $string['errorregistrationupdate'] = 'An error occurred during registration update . Error: {$a}';
 $string['errorunregister'] = 'There was an error while unregistering your site. Error: {$a}';
 $string['eventmoodiyregistration'] = 'Site registered with MoodiyCloud';
@@ -33,6 +34,8 @@ $string['eventmoodiyregistrationupdated'] = 'Site registration updated with Mood
 $string['eventmoodiyregistrationupdated_desc'] = 'User {$a->userid} has updated the site registration with id {$a->objectid} with MoodiyCloud.';
 $string['eventmoodiyunregistration'] = 'Site unregistered from MoodiyCloud';
 $string['eventmoodiyunregistration_desc'] = 'User {$a->userid} has unregistered the site with id {$a->objectid}.';
+$string['organisationname'] = 'Organisation name';
+$string['organisationname_help'] = 'The organisation name is shown in the site listing if you choose to have your site listed publicly.';
 $string['pleaserefreshregistration'] = 'Your site is registered. Registration last updated {$a}.<br />Your registration will be kept up to date. You can also manually update your registration at any time.';
 $string['pleaserefreshregistrationunknown'] = 'Your site has been registered but the registration date is unknown. Please update your registration using the \'Update registration\' button.';
 $string['pluginname'] = 'Moodiy registration';
