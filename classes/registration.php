@@ -758,7 +758,20 @@ class registration {
         $record->timecreated = time();
         $record->timemodified = time();
 
-        return $DB->insert_record('tool_moodiyregistration', $record);
+        if ($DB->insert_record('tool_moodiyregistration', $record)) {
+            $siteinfo = self::get_siteinfo();
+            $siteinfo['site_uuid'] = $record->site_uuid;
+            try {
+                //Update registration on Moodiy side.
+                $api = self::get_api_wrapper();
+                $api->update_registration($record, $siteinfo);
+            } catch (moodle_exception $e) {
+                debugging('Error updating internal site: ' . $e->getMessage());
+                return false;
+            }
+            return true;
+        }
+        return false;
     }
 
     /**
