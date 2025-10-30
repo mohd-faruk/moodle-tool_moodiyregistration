@@ -170,7 +170,7 @@ class registration {
             'sitetheme' => get_string('sitetheme', 'hub', $siteinfo['sitetheme']),
             'primaryauthtype' => get_string('primaryauthtype', 'hub', $siteinfo['primaryauthtype']),
             'pluginusage' => get_string('pluginusagedata', 'hub', $pluginusagelinks),
-            'aiusage' => get_string('aiusagestats', 'hub', self::get_ai_usage_time_range(true)),
+            'aiusage' => get_string('aiusagestats', 'tool_moodiyregistration', self::get_ai_usage_time_range(true)),
         ];
 
         foreach ($senddata as $key => $str) {

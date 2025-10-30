@@ -67,10 +67,10 @@ class moodiy_registration_form extends \moodleform {
 
         $mform->addElement('header', 'moodle', get_string('registrationinfo', 'hub'));
 
-        $mform->addElement('text', 'site_name', get_string('sitename', 'hub'),
+        $mform->addElement('text', 'site_name', get_string('organisationname', 'tool_moodiyregistration'),
             ['class' => 'registration_textfield', 'maxlength' => 255]);
         $mform->setType('site_name', PARAM_TEXT);
-        $mform->addHelpButton('site_name', 'sitename', 'hub');
+        $mform->addHelpButton('site_name', 'organisationname', 'tool_moodiyregistration');
 
         $mform->addElement('text', 'admin_email', get_string('siteemail', 'hub'),
             ['class' => 'registration_textfield']);

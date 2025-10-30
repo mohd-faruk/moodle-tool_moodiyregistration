@@ -295,7 +295,7 @@ class registration_test extends \advanced_testcase {
      * Test can_unregister method.
      * @covers ::can_unregister
      */
-    public function test_can_unregister_when_mobile_disabled() {
+    public function test_can_unregister_when_mobile_disabled(): void {
         // Simulate mobile plugin disabled.
         set_config('enabled', 0, 'tool_moodiymobile');
         $this->assertTrue(registration::can_unregister());
@@ -305,7 +305,7 @@ class registration_test extends \advanced_testcase {
      * Test can_unregister method when mobile plugin is enabled.
      * @covers ::can_unregister
      */
-    public function test_can_unregister_when_mobile_enabled() {
+    public function test_can_unregister_when_mobile_enabled(): void {
         // Simulate mobile plugin enabled.
         set_config('enabled', 1, 'tool_moodiymobile');
         $this->assertFalse(registration::can_unregister());
