@@ -123,6 +123,14 @@ class api {
         } else if ($response === false) {
             throw new coding_exception('Error calling API: ' . $curl->getError());
         } else if ($info['http_code'] != 200 || empty($response['success'])) {
+            if (isset($response['errors']) && is_array($response['errors'])) {
+                foreach ($response['errors'] as $error) {
+                    if (stripos($error, 'site registration does not exist') !== false) {
+                        // Throw exception to remove registration from moodle.
+                        throw new moodle_exception($error);
+                    }
+                }
+            }
             throw new moodle_exception($response['message'] ?? 'Error during registration update');
         } else {
             return $response;

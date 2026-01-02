@@ -463,9 +463,21 @@ class registration {
             \core\notification::add(get_string('siteregistrationupdated', 'tool_moodiyregistration'),
             \core\output\notification::NOTIFY_SUCCESS);
         } catch (moodle_exception $e) {
-            \core\notification::add(get_string('errorregistrationupdate', 'tool_moodiyregistration', $e->getMessage()),
-                \core\output\notification::NOTIFY_ERROR);
-            return false;
+            if (stripos($e->getMessage(), 'site registration does not exist') !== false) {
+                self::handle_nonexistent_registration($registration);
+                if (PHPUNIT_TEST) {
+                    // In tests we do not redirect, just return.
+                    return false;
+                }
+                redirect(new moodle_url('/admin/tool/moodiyregistration/index.php'),
+                 get_string('reregistration', 'tool_moodiyregistration'),
+                 null, \core\output\notification::NOTIFY_WARNING);
+                return;
+            } else {
+                \core\notification::add(get_string('errorregistrationupdate', 'tool_moodiyregistration', $e->getMessage()),
+                    \core\output\notification::NOTIFY_ERROR);
+                return false;
+            }
         }
         self::$registration = null;
         return true;
@@ -724,6 +736,15 @@ class registration {
             $event->add_record_snapshot('tool_moodiyregistration', $registration);
             $event->trigger();
         } catch (moodle_exception $e) {
+            if (stripos($e->getMessage(), 'site registration does not exist') !== false) {
+                self::handle_nonexistent_registration($registration);
+                if (PHPUNIT_TEST) {
+                    // In tests we do not redirect, just return the response.
+                    return false;
+                }
+                debugging('Site unregistered from Moodiy side, local registration record deleted.');
+                return;
+            }
             debugging('Error updating registration: ' . $e->getMessage());
             return;
         }
@@ -763,12 +784,12 @@ class registration {
                 $siteinfo = self::get_siteinfo();
                 $siteinfo['site_uuid'] = $record->site_uuid;
                 try {
-                    //Update registration on Moodiy side.
+                    // Update registration on Moodiy side.
                     $api = self::get_api_wrapper();
                     $api->update_registration($record, $siteinfo);
                 } catch (moodle_exception $e) {
                     debugging('Error updating internal site: ' . $e->getMessage());
-                    // if update fails, keep the inserted record, moodiy will take care.
+                    // If update fails, keep the inserted record, moodiy will take care.
                     return false;
                 }
                 return true;
@@ -845,6 +866,19 @@ class registration {
         }
 
         return $renderer->warningbox($message, $continuehtml, $displayoptions);
+    }
+
+    /**
+     * Handle the case when the registration does not exist on Moodiy side anymore.
+     */
+    private static function handle_nonexistent_registration(\stdClass $registration): void {
+        global $DB;
+        // The site is not registered on Moodiy side anymore, delete local record.
+        // Disable moodiymobile services.
+        set_config('enabled', 0, 'tool_moodiymobile');
+
+        $DB->delete_records('tool_moodiyregistration', ['site_uuid' => $registration->site_uuid]);
+        self::$registration = null;
     }
 
 }

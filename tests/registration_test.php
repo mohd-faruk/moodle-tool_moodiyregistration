@@ -310,4 +310,40 @@ class registration_test extends \advanced_testcase {
         set_config('enabled', 1, 'tool_moodiymobile');
         $this->assertFalse(registration::can_unregister());
     }
+
+    /**
+     * Test updating site registration when registration does not exist on external site.
+     * @covers ::update_registration
+     */
+    public function test_update_registration_for_deleted_registration(): void {
+        global $DB, $CFG;
+
+        // Insert a test record to simulate a registered site.
+        $record = new \stdClass();
+        $record->site_uuid = 'test-uuid-123456789';
+        $record->site_url = 'https://example.moodle.org';
+        $record->timecreated = time();
+        $record->timemodified = time() - 86400; // 1 day ago.
+        $recordid = $DB->insert_record('tool_moodiyregistration', $record);
+
+        // Create a mock for the api class to simulate "registration does not exist".
+        $apiwrapper = $this->createMock(\tool_moodiyregistration\api_wrapper::class);
+        $apiwrapper->method('update_registration')->will(
+            $this->throwException(new \moodle_exception('site registration does not exist'))
+        );
+
+        // Set the mock for tests.
+        $CFG->tool_moodiyregistration_test_api_wrapper = $apiwrapper;
+
+        // Update the registration.
+        $result = registration::update_registration();
+
+        // The result should be false (update failed).
+        $this->assertFalse($result);
+        $this->assertEquals(0, get_config('tool_moodiymobile', 'enabled'));
+
+        // The local registration should be deleted for data integrity.
+        $deleted = !$DB->record_exists('tool_moodiyregistration', ['id' => $recordid]);
+        $this->assertTrue($deleted, 'Local registration should be deleted if not found on external site.');
+    }
 }

@@ -49,6 +49,7 @@ $string['registrationconfirmerror'] = 'There was an error confirming the registr
 $string['registrationerror'] = 'An error occurred while attempting to register the site: {$a}';
 $string['registrationerrorinvalidurl'] = 'The URL provided is invalid. Please check the URL and try again.';
 $string['registrationwarning'] = 'Don\'t miss out on important updates and security alerts.';
+$string['reregistration'] = 'Site registration does not exist. Please re-register your site with MoodiyCloud.';
 $string['sendfollowinginfo_help'] = 'The following information will be sent to MoodiyCloud each time your site registration is updated. The information contributes to overall statistics only and will not be made public on any site listing.';
 $string['siteregistrationupdated'] = 'Site registration updated';
 $string['siteregistrationurlupdated'] = 'Site url updated with MoodiyCloud.';
