@@ -463,7 +463,7 @@ class registration {
             \core\notification::add(get_string('siteregistrationupdated', 'tool_moodiyregistration'),
             \core\output\notification::NOTIFY_SUCCESS);
         } catch (moodle_exception $e) {
-            if (stripos($e->getMessage(), 'site registration does not exist') !== false) {
+            if (stripos($e->getMessage(), \tool_moodiyregistration\api::ERROR_REGISTRATION_NONEXISTENT) !== false) {
                 self::handle_nonexistent_registration($registration);
                 if (PHPUNIT_TEST) {
                     // In tests we do not redirect, just return.
@@ -512,13 +512,25 @@ class registration {
             ]);
             $event->add_record_snapshot('tool_moodiyregistration', $registration);
             $event->trigger();
-            \core\notification::add('Site deleted successfully from Moodiy.',
+            \core\notification::add(get_string('unregister-success', 'tool_moodiyregistration'),
                 \core\output\notification::NOTIFY_SUCCESS);
             self::$registration = null;
         } catch (moodle_exception $e) {
-            \core\notification::add(get_string('unregistrationerror', 'tool_moodiyregistration', $e->getMessage()),
+            if (stripos($e->getMessage(), \tool_moodiyregistration\api::ERROR_REGISTRATION_NONEXISTENT) !== false) {
+                self::handle_nonexistent_registration($registration);
+                if (PHPUNIT_TEST) {
+                    // In tests we do not redirect, just return.
+                    return false;
+                }
+                redirect(new moodle_url('/admin/tool/moodiyregistration/index.php'),
+                 get_string('unregistered-already', 'tool_moodiyregistration'),
+                 null, \core\output\notification::NOTIFY_WARNING);
+                return;
+            } else {
+                \core\notification::add(get_string('unregistrationerror', 'tool_moodiyregistration', $e->getMessage()),
                 \core\output\notification::NOTIFY_ERROR);
-            return false;
+                return false;
+            }
         }
 
         return true;
@@ -736,7 +748,7 @@ class registration {
             $event->add_record_snapshot('tool_moodiyregistration', $registration);
             $event->trigger();
         } catch (moodle_exception $e) {
-            if (stripos($e->getMessage(), 'site registration does not exist') !== false) {
+            if (stripos($e->getMessage(), \tool_moodiyregistration\api::ERROR_REGISTRATION_NONEXISTENT) !== false) {
                 self::handle_nonexistent_registration($registration);
                 if (PHPUNIT_TEST) {
                     // In tests we do not redirect, just return the response.

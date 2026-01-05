@@ -329,7 +329,7 @@ class registration_test extends \advanced_testcase {
         // Create a mock for the api class to simulate "registration does not exist".
         $apiwrapper = $this->createMock(\tool_moodiyregistration\api_wrapper::class);
         $apiwrapper->method('update_registration')->will(
-            $this->throwException(new \moodle_exception('site registration does not exist'))
+            $this->throwException(new \moodle_exception(\tool_moodiyregistration\api::ERROR_REGISTRATION_NONEXISTENT))
         );
 
         // Set the mock for tests.
@@ -345,5 +345,42 @@ class registration_test extends \advanced_testcase {
         // The local registration should be deleted for data integrity.
         $deleted = !$DB->record_exists('tool_moodiyregistration', ['id' => $recordid]);
         $this->assertTrue($deleted, 'Local registration should be deleted if not found on external site.');
+    }
+    /**
+     * Test site unregistration when registration does not exist on external site.
+     * @covers ::unregister
+     */
+    public function test_site_unregistration_for_deleted_registration(): void {
+        global $DB, $CFG;
+
+        // Insert a test record to simulate a registered site.
+        $record = new \stdClass();
+        $record->site_uuid = 'test-uuid-123456789';
+        $record->site_url = 'https://example.moodle.org';
+        $record->timecreated = time();
+        $record->timemodified = time();
+        $DB->insert_record('tool_moodiyregistration', $record);
+
+        // Verify site is registered.
+        $this->assertTrue(registration::is_registered());
+
+        // Create a mock for the api class.
+        $apiwrapper = $this->createMock(\tool_moodiyregistration\api_wrapper::class);
+        $apiwrapper->expects($this->once())->method('unregister_site')->will(
+            $this->throwException(new \moodle_exception(\tool_moodiyregistration\api::ERROR_REGISTRATION_NONEXISTENT))
+        );
+
+        // Set the mock for tests.
+        $CFG->tool_moodiyregistration_test_api_wrapper = $apiwrapper;
+
+        // Unregister the site.
+        $result = registration::unregister();
+        // Check the result.
+        $this->assertFalse($result);
+        $this->assertEquals(0, get_config('tool_moodiymobile', 'enabled'));
+
+        // Verify site is no longer registered.
+        $this->assertFalse(registration::is_registered());
+        $this->assertEquals(0, $DB->count_records('tool_moodiyregistration'));
     }
 }

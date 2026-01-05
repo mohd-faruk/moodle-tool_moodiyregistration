@@ -41,6 +41,8 @@ use moodle_url;
 class api {
     /** @var string The Moodiy API URL */
     const MOODIY_API_URL = 'https://api.moodiycloud.com';
+    /** Error message when site registration does not exist. */
+    public const ERROR_REGISTRATION_NONEXISTENT = 'site registration does not exist';
 
     /**
      * Get the API URL for Moodiy.
@@ -125,7 +127,7 @@ class api {
         } else if ($info['http_code'] != 200 || empty($response['success'])) {
             if (isset($response['errors']) && is_array($response['errors'])) {
                 foreach ($response['errors'] as $error) {
-                    if (stripos($error, 'site registration does not exist') !== false) {
+                    if (stripos($error, self::ERROR_REGISTRATION_NONEXISTENT) !== false) {
                         // Throw exception to remove registration from moodle.
                         throw new moodle_exception($error);
                     }
@@ -172,6 +174,14 @@ class api {
         } else if ($response === false) {
             throw new coding_exception('Error calling API: ' . $curl->getError());
         } else if ($info['http_code'] != 200 || empty($response['success'])) {
+            if (isset($response['errors']) && is_array($response['errors'])) {
+                foreach ($response['errors'] as $error) {
+                    if (stripos($error, self::ERROR_REGISTRATION_NONEXISTENT) !== false) {
+                        // Throw exception to remove registration from moodle.
+                        throw new moodle_exception($error);
+                    }
+                }
+            }
             throw new moodle_exception($response['message'] ?? 'Error during un-registration');
         }
         return $response;
