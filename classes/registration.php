@@ -771,17 +771,7 @@ class registration {
     public static function register_internal_site($uuid) {
         global $DB, $CFG;
 
-        $admin = get_admin();
-        $site = get_site();
-        $sitedata = new \stdClass();
-        $sitedata->site_name = format_string($site->fullname, true, ['context' => \context_course::instance(SITEID)]);
-        $sitedata->description = $site->summary;
-        $sitedata->admin_email = $admin->email;
-        $sitedata->country_code = $admin->country ?: ($CFG->country ?: '');
-        $sitedata->language = explode('_', current_language())[0];
-        $sitedata->privacy = 'notdisplayed';
-        $sitedata->policyagreed = 0;
-        $sitedata->organisation_type = 'donotshare';
+        $sitedata = self::build_internal_site_info_defaults();
         self::save_site_info($sitedata);
 
         // Create a new record in 'tool_moodiyregistration'.
@@ -835,47 +825,61 @@ class registration {
             ];
         }
 
-        $existingrecords = $DB->get_records('tool_moodiyregistration');
-        $existingcount = count($existingrecords);
-
-        $matchingrecord = null;
-        if ($existingcount === 1) {
-            $matchingrecord = reset($existingrecords);
+        if (!self::is_internal_site()) {
+            return [
+                'status' => 'error',
+                'message' => 'Internal site registration repair is only available for internal hosted sites.',
+            ];
         }
 
-        if ($matchingrecord && $matchingrecord->site_uuid === $uuid) {
+        $existingcount = (int) $DB->count_records('tool_moodiyregistration');
+        $existingrecord = $existingcount === 1 ? $DB->get_record('tool_moodiyregistration', []) : false;
+
+        if ($existingrecord && $existingrecord->site_uuid === $uuid && ($existingrecord->site_url ?? '') === $CFG->wwwroot) {
             self::$registration = null;
 
             return [
                 'status' => 'ok',
                 'message' => 'Internal site registration already matches the requested UUID.',
                 'site_uuid' => $uuid,
-                'site_url' => $matchingrecord->site_url,
+                'site_url' => $existingrecord->site_url,
                 'deleted_records' => 0,
                 'recreated' => false,
                 'remote_sync_status' => 'unchanged',
             ];
         }
 
-        if ($existingcount > 0) {
-            $DB->delete_records('tool_moodiyregistration');
-        }
-        self::$registration = null;
+        try {
+            $transaction = $DB->start_delegated_transaction();
+            [$record, $deletedrecords, $recreated] = self::upsert_internal_site_registration_record($uuid);
+            $transaction->allow_commit();
+        } catch (\dml_exception $e) {
+            debugging('Error repairing internal site registration record: ' . $e->getMessage());
 
-        $remotesynced = self::register_internal_site($uuid);
-        self::$registration = null;
-
-        $record = $DB->get_record('tool_moodiyregistration', ['site_uuid' => $uuid]);
-        if (!$record) {
             return [
                 'status' => 'error',
                 'message' => 'Failed to recreate the local internal site registration record.',
                 'site_uuid' => $uuid,
-                'deleted_records' => $existingcount,
-                'recreated' => true,
+                'deleted_records' => 0,
+                'recreated' => false,
                 'remote_sync_status' => 'failed',
             ];
         }
+
+        self::$registration = null;
+
+        self::ensure_internal_site_info_defaults();
+        $siteinfo = self::get_siteinfo();
+        $siteinfo['site_uuid'] = $uuid;
+        $remotesynced = false;
+        try {
+            $api = self::get_api_wrapper();
+            $api->update_registration($record, $siteinfo);
+            $remotesynced = true;
+        } catch (moodle_exception $e) {
+            debugging('Error updating internal site during repair: ' . $e->getMessage());
+        }
+        self::$registration = null;
 
         return [
             'status' => 'ok',
@@ -884,10 +888,129 @@ class registration {
                 : 'Internal site registration repaired locally; remote Moodiy sync is pending.',
             'site_uuid' => $uuid,
             'site_url' => $record->site_url ?? $CFG->wwwroot,
-            'deleted_records' => $existingcount,
-            'recreated' => true,
+            'deleted_records' => $deletedrecords,
+            'recreated' => $recreated,
             'remote_sync_status' => $remotesynced ? 'ok' : 'pending',
         ];
+    }
+
+    /**
+     * Ensure the local registration table contains a single record for the provided UUID.
+     *
+     * @param string $uuid Desired site UUID
+     * @return array{0:\stdClass,1:int,2:bool} Updated record, deleted record count, recreated flag
+     */
+    private static function upsert_internal_site_registration_record(string $uuid): array {
+        global $CFG, $DB;
+
+        $records = array_values($DB->get_records('tool_moodiyregistration', null, 'id ASC'));
+        $existingcount = count($records);
+        $deletedrecords = $existingcount > 0 ? max($existingcount - 1, 0) : 0;
+        $recreated = true;
+
+        $matchingrecord = null;
+        foreach ($records as $record) {
+            if ($record->site_uuid === $uuid) {
+                $matchingrecord = $record;
+                break;
+            }
+        }
+
+        if ($matchingrecord) {
+            $record = $matchingrecord;
+        } elseif ($records !== []) {
+            $record = $records[0];
+        } else {
+            $record = (object) [
+                'site_uuid' => $uuid,
+                'site_url' => $CFG->wwwroot,
+                'timecreated' => time(),
+                'timemodified' => time(),
+            ];
+            $record->id = $DB->insert_record('tool_moodiyregistration', $record);
+
+            return [$record, 0, true];
+        }
+
+        $record->site_uuid = $uuid;
+        $record->site_url = $CFG->wwwroot;
+        $record->timemodified = time();
+        $DB->update_record('tool_moodiyregistration', $record);
+
+        foreach ($records as $existingrecord) {
+            if ((int) $existingrecord->id === (int) $record->id) {
+                continue;
+            }
+
+            $DB->delete_records('tool_moodiyregistration', ['id' => $existingrecord->id]);
+        }
+
+        if ($matchingrecord && $deletedrecords === 0 && ($record->site_url ?? '') === $CFG->wwwroot) {
+            $recreated = false;
+        }
+
+        return [$record, $deletedrecords, $recreated];
+    }
+
+    /**
+     * Determine whether the current Moodle instance is an internal hosted site.
+     *
+     * @return bool True when internal hosted-site config is present
+     */
+    private static function is_internal_site(): bool {
+        global $CFG;
+
+        $forcedpluginsettings = is_array($CFG->forced_plugin_settings ?? null) ? $CFG->forced_plugin_settings : [];
+
+        return array_key_exists('auth_maintenance', $forcedpluginsettings);
+    }
+
+    /**
+     * Build the default registration metadata for an internal hosted site.
+     *
+     * @return \stdClass Default site info payload
+     */
+    private static function build_internal_site_info_defaults(): \stdClass {
+        global $CFG;
+
+        $admin = get_admin();
+        $site = get_site();
+        $sitedata = new \stdClass();
+        $sitedata->site_name = format_string($site->fullname, true, ['context' => \context_course::instance(SITEID)]);
+        $sitedata->description = $site->summary;
+        $sitedata->admin_email = $admin->email;
+        $sitedata->country_code = $admin->country ?: ($CFG->country ?: '');
+        $sitedata->language = explode('_', current_language())[0];
+        $sitedata->privacy = 'notdisplayed';
+        $sitedata->policyagreed = 0;
+        $sitedata->organisation_type = 'donotshare';
+
+        return $sitedata;
+    }
+
+    /**
+     * Ensure internal hosted sites have saved registration metadata without
+     * overwriting any values already chosen by an operator.
+     */
+    private static function ensure_internal_site_info_defaults(): void {
+        $savedinfo = self::get_saved_form_data();
+        $defaults = self::build_internal_site_info_defaults();
+        $shouldsave = false;
+        $mergedinfo = new \stdClass();
+
+        foreach (self::FORM_FIELDS as $field) {
+            $value = $savedinfo[$field] ?? null;
+            if ($value === null) {
+                $value = $defaults->$field;
+                $shouldsave = true;
+            }
+
+            $mergedinfo->$field = $value;
+        }
+
+        if ($shouldsave) {
+            self::save_site_info($mergedinfo);
+        }
     }
 
     /**
