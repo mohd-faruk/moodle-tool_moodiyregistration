@@ -814,6 +814,83 @@ class registration {
     }
 
     /**
+     * Repair the local internal site registration record for a provided UUID.
+     *
+     * This recreates the single local tool_moodiyregistration row so renewal
+     * and update requests can succeed again. Remote Moodiy sync may still be
+     * pending if the immediate API update fails, but the recreated local row
+     * lets the regular renewal/update flow retry safely.
+     *
+     * @param string $uuid The UUID that should be stored locally.
+     * @return array<string, mixed> Structured repair result
+     */
+    public static function repair_internal_site_registration(string $uuid): array {
+        global $CFG, $DB;
+
+        $uuid = trim($uuid);
+        if ($uuid === '') {
+            return [
+                'status' => 'error',
+                'message' => 'Site UUID is required.',
+            ];
+        }
+
+        $existingrecords = $DB->get_records('tool_moodiyregistration');
+        $existingcount = count($existingrecords);
+
+        $matchingrecord = null;
+        if ($existingcount === 1) {
+            $matchingrecord = reset($existingrecords);
+        }
+
+        if ($matchingrecord && $matchingrecord->site_uuid === $uuid) {
+            self::$registration = null;
+
+            return [
+                'status' => 'ok',
+                'message' => 'Internal site registration already matches the requested UUID.',
+                'site_uuid' => $uuid,
+                'site_url' => $matchingrecord->site_url,
+                'deleted_records' => 0,
+                'recreated' => false,
+                'remote_sync_status' => 'unchanged',
+            ];
+        }
+
+        if ($existingcount > 0) {
+            $DB->delete_records('tool_moodiyregistration');
+        }
+        self::$registration = null;
+
+        $remotesynced = self::register_internal_site($uuid);
+        self::$registration = null;
+
+        $record = $DB->get_record('tool_moodiyregistration', ['site_uuid' => $uuid]);
+        if (!$record) {
+            return [
+                'status' => 'error',
+                'message' => 'Failed to recreate the local internal site registration record.',
+                'site_uuid' => $uuid,
+                'deleted_records' => $existingcount,
+                'recreated' => true,
+                'remote_sync_status' => 'failed',
+            ];
+        }
+
+        return [
+            'status' => 'ok',
+            'message' => $remotesynced
+                ? 'Internal site registration repaired and synced with Moodiy.'
+                : 'Internal site registration repaired locally; remote Moodiy sync is pending.',
+            'site_uuid' => $uuid,
+            'site_url' => $record->site_url ?? $CFG->wwwroot,
+            'deleted_records' => $existingcount,
+            'recreated' => true,
+            'remote_sync_status' => $remotesynced ? 'ok' : 'pending',
+        ];
+    }
+
+    /**
      * Get the site UUID.
      *
      * This method retrieves the site UUID from the registration record.

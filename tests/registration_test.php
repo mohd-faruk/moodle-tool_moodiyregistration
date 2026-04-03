@@ -383,4 +383,66 @@ class registration_test extends \advanced_testcase {
         $this->assertFalse(registration::is_registered());
         $this->assertEquals(0, $DB->count_records('tool_moodiyregistration'));
     }
+
+    /**
+     * Test repairing an internal site registration recreates the local record.
+     * @covers ::repair_internal_site_registration
+     */
+    public function test_repair_internal_site_registration_recreates_local_record(): void {
+        global $DB, $CFG;
+
+        $oldrecord = (object) [
+            'site_uuid' => 'old-uuid-123456',
+            'site_url' => 'https://example.moodle.org',
+            'timecreated' => time() - 100,
+            'timemodified' => time() - 100,
+        ];
+        $DB->insert_record('tool_moodiyregistration', $oldrecord);
+
+        $apiwrapper = $this->createMock(\tool_moodiyregistration\api_wrapper::class);
+        $apiwrapper->method('update_registration')->willReturn([
+            'success' => true,
+            'message' => 'Site registration updated successfully',
+        ]);
+        $CFG->tool_moodiyregistration_test_api_wrapper = $apiwrapper;
+
+        $result = registration::repair_internal_site_registration('new-uuid-654321');
+
+        $this->assertSame('ok', $result['status']);
+        $this->assertSame('new-uuid-654321', $result['site_uuid']);
+        $this->assertSame(1, $result['deleted_records']);
+        $this->assertTrue($result['recreated']);
+        $this->assertSame('ok', $result['remote_sync_status']);
+
+        $records = $DB->get_records('tool_moodiyregistration');
+        $this->assertCount(1, $records);
+
+        $record = reset($records);
+        $this->assertSame('new-uuid-654321', $record->site_uuid);
+        $this->assertSame($CFG->wwwroot, $record->site_url);
+    }
+
+    /**
+     * Test repairing an internal site registration preserves a pending local repair when remote sync fails.
+     * @covers ::repair_internal_site_registration
+     */
+    public function test_repair_internal_site_registration_returns_pending_when_remote_sync_fails(): void {
+        global $DB, $CFG;
+
+        $apiwrapper = $this->createMock(\tool_moodiyregistration\api_wrapper::class);
+        $apiwrapper->method('update_registration')->will(
+            $this->throwException(new \moodle_exception('Remote API unavailable'))
+        );
+        $CFG->tool_moodiyregistration_test_api_wrapper = $apiwrapper;
+
+        $result = registration::repair_internal_site_registration('pending-uuid-123456');
+
+        $this->assertSame('ok', $result['status']);
+        $this->assertSame('pending', $result['remote_sync_status']);
+        $this->assertTrue($result['recreated']);
+
+        $record = $DB->get_record('tool_moodiyregistration', ['site_uuid' => 'pending-uuid-123456']);
+        $this->assertNotFalse($record);
+        $this->assertSame('pending-uuid-123456', $record->site_uuid);
+    }
 }
