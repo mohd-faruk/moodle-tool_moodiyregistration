@@ -383,4 +383,140 @@ class registration_test extends \advanced_testcase {
         $this->assertFalse(registration::is_registered());
         $this->assertEquals(0, $DB->count_records('tool_moodiyregistration'));
     }
+
+    /**
+     * Test repairing an internal site registration recreates the local record.
+     * @covers ::repair_internal_site_registration
+     */
+    public function test_repair_internal_site_registration_recreates_local_record(): void {
+        global $DB, $CFG;
+
+        $this->markAsInternalSite();
+
+        $oldrecord = (object) [
+            'site_uuid' => 'old-uuid-123456',
+            'site_url' => 'https://example.moodle.org',
+            'timecreated' => time() - 100,
+            'timemodified' => time() - 100,
+        ];
+        $DB->insert_record('tool_moodiyregistration', $oldrecord);
+
+        $apiwrapper = $this->createMock(\tool_moodiyregistration\api_wrapper::class);
+        $apiwrapper->method('update_registration')->willReturn([
+            'success' => true,
+            'message' => 'Site registration updated successfully',
+        ]);
+        $CFG->tool_moodiyregistration_test_api_wrapper = $apiwrapper;
+
+        $result = registration::repair_internal_site_registration('new-uuid-654321');
+
+        $this->assertSame('ok', $result['status']);
+        $this->assertSame('new-uuid-654321', $result['site_uuid']);
+        $this->assertSame(1, $result['deleted_records']);
+        $this->assertTrue($result['recreated']);
+        $this->assertSame('ok', $result['remote_sync_status']);
+
+        $records = $DB->get_records('tool_moodiyregistration');
+        $this->assertCount(1, $records);
+
+        $record = reset($records);
+        $this->assertSame('new-uuid-654321', $record->site_uuid);
+        $this->assertSame($CFG->wwwroot, $record->site_url);
+    }
+
+    /**
+     * Test repairing an internal site registration preserves a pending local repair when remote sync fails.
+     * @covers ::repair_internal_site_registration
+     */
+    public function test_repair_internal_site_registration_returns_pending_when_remote_sync_fails(): void {
+        global $DB, $CFG;
+
+        $this->markAsInternalSite();
+
+        $apiwrapper = $this->createMock(\tool_moodiyregistration\api_wrapper::class);
+        $apiwrapper->method('update_registration')->will(
+            $this->throwException(new \moodle_exception('Remote API unavailable'))
+        );
+        $CFG->tool_moodiyregistration_test_api_wrapper = $apiwrapper;
+
+        $result = registration::repair_internal_site_registration('pending-uuid-123456');
+
+        $this->assertSame('ok', $result['status']);
+        $this->assertSame('pending', $result['remote_sync_status']);
+        $this->assertTrue($result['recreated']);
+
+        $record = $DB->get_record('tool_moodiyregistration', ['site_uuid' => 'pending-uuid-123456']);
+        $this->assertNotFalse($record);
+        $this->assertSame('pending-uuid-123456', $record->site_uuid);
+    }
+
+    /**
+     * Test repairing an internal site registration preserves saved registration metadata.
+     * @covers ::repair_internal_site_registration
+     */
+    public function test_repair_internal_site_registration_preserves_saved_site_info(): void {
+        global $CFG;
+
+        $this->markAsInternalSite();
+
+        $data = (object) [
+            'site_name' => 'Custom Site Name',
+            'description' => 'Custom site description',
+            'admin_email' => 'owner@example.com',
+            'country_code' => 'IN',
+            'language' => 'fr',
+            'privacy' => 'displayed',
+            'organisation_type' => 'school',
+            'policyagreed' => 1,
+        ];
+        registration::save_site_info($data);
+
+        $apiwrapper = $this->createMock(\tool_moodiyregistration\api_wrapper::class);
+        $apiwrapper->method('update_registration')->willReturn([
+            'success' => true,
+            'message' => 'Site registration updated successfully',
+        ]);
+        $CFG->tool_moodiyregistration_test_api_wrapper = $apiwrapper;
+
+        registration::repair_internal_site_registration('preserve-uuid-123456');
+
+        $this->assertSame('Custom Site Name', get_config('tool_moodiyregistration', 'site_site_name'));
+        $this->assertSame('Custom site description', get_config('tool_moodiyregistration', 'site_description'));
+        $this->assertSame('owner@example.com', get_config('tool_moodiyregistration', 'site_admin_email'));
+        $this->assertSame('school', get_config('tool_moodiyregistration', 'site_organisation_type'));
+    }
+
+    /**
+     * Test repairing an internal site registration is rejected for non-internal sites.
+     * @covers ::repair_internal_site_registration
+     */
+    public function test_repair_internal_site_registration_rejects_non_internal_sites(): void {
+        global $DB;
+
+        $existing = (object) [
+            'site_uuid' => 'existing-uuid-123456',
+            'site_url' => 'https://example.moodle.org',
+            'timecreated' => time() - 100,
+            'timemodified' => time() - 100,
+        ];
+        $DB->insert_record('tool_moodiyregistration', $existing);
+
+        $result = registration::repair_internal_site_registration('new-uuid-654321');
+
+        $this->assertSame('error', $result['status']);
+        $this->assertSame(
+            'Internal site registration repair is only available for internal hosted sites.',
+            $result['message']
+        );
+        $this->assertSame(1, $DB->count_records('tool_moodiyregistration'));
+        $record = $DB->get_record('tool_moodiyregistration', []);
+        $this->assertNotFalse($record);
+        $this->assertSame('existing-uuid-123456', $record->site_uuid);
+    }
+
+    private function markAsInternalSite(): void {
+        global $CFG;
+
+        $CFG->forced_plugin_settings = ['auth_maintenance' => []];
+    }
 }
