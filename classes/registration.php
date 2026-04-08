@@ -727,7 +727,7 @@ class registration {
      *
      * @throws moodle_exception
      */
-    public static function update_registration() {
+    public static function update_registration(bool $force = false) {
         global $DB;
 
         if (!$registration = self::get_registration()) {
@@ -737,7 +737,7 @@ class registration {
         $siteinfo = self::get_siteinfo();
         $siteinfo['site_uuid'] = $registration->site_uuid;
 
-        if (self::should_skip_automatic_update($siteinfo)) {
+        if (self::should_skip_automatic_update($siteinfo, $force)) {
             mtrace('Skipping registration update because the automatic payload is unchanged.');
             return true;
         }
@@ -1116,10 +1116,16 @@ class registration {
      * @return bool True when a new task was queued, false when an equivalent task already exists
      */
     public static function queue_update_request_task(string $siteuuid): bool {
-        $task = new \tool_moodiyregistration\task\process_update_request();
-        $task->set_custom_data(['site_uuid' => trim($siteuuid)]);
+        $siteuuid = trim($siteuuid);
+        if ($siteuuid === '' || self::has_pending_update_request_task($siteuuid)) {
+            return false;
+        }
 
-        return (bool) \core\task\manager::queue_adhoc_task($task, true);
+        $task = new \tool_moodiyregistration\task\process_update_request();
+        $task->set_custom_data(['site_uuid' => $siteuuid]);
+        \core\task\manager::queue_adhoc_task($task, true);
+
+        return true;
     }
 
     /**
@@ -1128,7 +1134,11 @@ class registration {
      * @param array $siteinfo The current automatic update payload
      * @return bool
      */
-    private static function should_skip_automatic_update(array $siteinfo): bool {
+    private static function should_skip_automatic_update(array $siteinfo, bool $force = false): bool {
+        if ($force) {
+            return false;
+        }
+
         $savedhash = get_config('tool_moodiyregistration', self::LAST_SUCCESSFUL_UPDATE_HASH);
         if (!is_string($savedhash) || $savedhash === '') {
             return false;
@@ -1158,9 +1168,29 @@ class registration {
      */
     private static function build_automatic_update_payload_hash(array $siteinfo): string {
         unset($siteinfo['timestamp']);
+        unset($siteinfo['site_uuid']);
         ksort($siteinfo);
 
         return hash('sha256', json_encode($siteinfo));
+    }
+
+    /**
+     * Determine whether the same update request task is already queued.
+     *
+     * @param string $siteuuid
+     * @return bool
+     */
+    private static function has_pending_update_request_task(string $siteuuid): bool {
+        $tasks = \core\task\manager::get_adhoc_tasks(\tool_moodiyregistration\task\process_update_request::class);
+
+        foreach ($tasks as $task) {
+            $customdata = $task->get_custom_data();
+            if (($customdata->site_uuid ?? null) === $siteuuid) {
+                return true;
+            }
+        }
+
+        return false;
     }
 
 }

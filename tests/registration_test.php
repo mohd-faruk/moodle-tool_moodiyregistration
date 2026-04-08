@@ -292,6 +292,39 @@ class registration_test extends \advanced_testcase {
     }
 
     /**
+     * Test forced update requests still call Moodiy even when the automatic payload hash is unchanged.
+     * @covers ::update_registration
+     */
+    public function test_update_registration_force_bypasses_unchanged_payload_skip(): void {
+        global $DB, $CFG;
+
+        $record = (object) [
+            'site_uuid' => 'test-uuid-force-refresh',
+            'site_url' => 'https://example.moodle.org',
+            'timecreated' => time(),
+            'timemodified' => time() - 86400,
+        ];
+        $recordid = $DB->insert_record('tool_moodiyregistration', $record);
+
+        $apiwrapper = $this->createMock(\tool_moodiyregistration\api_wrapper::class);
+        $apiwrapper->expects($this->exactly(2))
+            ->method('update_registration')
+            ->willReturn([
+                'success' => true,
+                'message' => 'Site registration updated successfully',
+            ]);
+        $CFG->tool_moodiyregistration_test_api_wrapper = $apiwrapper;
+
+        registration::update_registration();
+        $firstupdate = $DB->get_record('tool_moodiyregistration', ['id' => $recordid]);
+
+        registration::update_registration(true);
+        $secondupdate = $DB->get_record('tool_moodiyregistration', ['id' => $recordid]);
+
+        $this->assertGreaterThanOrEqual($firstupdate->timemodified, $secondupdate->timemodified);
+    }
+
+    /**
      * Test getting site information.
      * @covers ::get_site_info
      */
