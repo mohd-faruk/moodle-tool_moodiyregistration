@@ -54,6 +54,9 @@ class registration {
     /** @var stdClass cached site registration information */
     protected static $registration = null;
 
+    /** @var string Config key storing the last successful automatic update payload hash. */
+    const LAST_SUCCESSFUL_UPDATE_HASH = 'lastsuccessfulupdatehash';
+
     /**
      * Checks if site is registered
      *
@@ -400,6 +403,7 @@ class registration {
                 $record->timemodified = time();
                 $record->id = $DB->insert_record('tool_moodiyregistration', $record);
                 self::$registration = true;
+                self::remember_automatic_update_payload_hash(self::get_siteinfo());
                 // Delete the verification key from cache after successful registration.
                 $cache->delete('verificationkey');
                 // Trigger a site registration event.
@@ -450,6 +454,7 @@ class registration {
             $api = self::get_api_wrapper();
             $api->update_registration($registration, $data);
             $DB->update_record('tool_moodiyregistration', ['id' => $registration->id, 'timemodified' => time()]);
+            self::remember_automatic_update_payload_hash(self::get_siteinfo());
             // Trigger a site registration updated event.
             $event = \tool_moodiyregistration\event\moodiyregistration_updated::create([
                 'context' => context_system::instance(),
@@ -691,6 +696,7 @@ class registration {
                     $registration->site_url = $CFG->wwwroot;
                     $registration->timemodified = time();
                     $DB->update_record('tool_moodiyregistration', $registration);
+                    self::remember_automatic_update_payload_hash($siteinfo);
                     self::$registration = null;
                     mtrace(get_string('siteregistrationurlupdated', 'tool_moodiyregistration'));
 
@@ -721,7 +727,7 @@ class registration {
      *
      * @throws moodle_exception
      */
-    public static function update_registration() {
+    public static function update_registration(bool $force = false) {
         global $DB;
 
         if (!$registration = self::get_registration()) {
@@ -730,10 +736,19 @@ class registration {
 
         $siteinfo = self::get_siteinfo();
         $siteinfo['site_uuid'] = $registration->site_uuid;
+
+        if (self::should_skip_automatic_update($siteinfo, $force)) {
+            if (!PHPUNIT_TEST) {
+                mtrace('Skipping registration update because the automatic payload is unchanged.');
+            }
+            return true;
+        }
+
         try {
             $api = self::get_api_wrapper();
             $api->update_registration($registration, $siteinfo);
             $DB->update_record('tool_moodiyregistration', ['id' => $registration->id, 'timemodified' => time()]);
+            self::remember_automatic_update_payload_hash($siteinfo);
 
             self::$registration = null;
             // Trigger a site registration updated event.
@@ -789,6 +804,7 @@ class registration {
                     // Update registration on Moodiy side.
                     $api = self::get_api_wrapper();
                     $api->update_registration($record, $siteinfo);
+                    self::remember_automatic_update_payload_hash($siteinfo);
                 } catch (moodle_exception $e) {
                     debugging('Error updating internal site: ' . $e->getMessage());
                     // If update fails, keep the inserted record, moodiy will take care.
@@ -875,9 +891,10 @@ class registration {
         try {
             $api = self::get_api_wrapper();
             $api->update_registration($record, $siteinfo);
+            self::remember_automatic_update_payload_hash($siteinfo);
             $remotesynced = true;
         } catch (moodle_exception $e) {
-            debugging('Error updating internal site during repair: ' . $e->getMessage());
+            // A remote sync miss here is recoverable. The caller receives a pending status and can retry later.
         }
         self::$registration = null;
 
@@ -1088,9 +1105,97 @@ class registration {
         // The site is not registered on Moodiy side anymore, delete local record.
         // Disable moodiymobile services.
         set_config('enabled', 0, 'tool_moodiymobile');
+        unset_config(self::LAST_SUCCESSFUL_UPDATE_HASH, 'tool_moodiyregistration');
 
         $DB->delete_records('tool_moodiyregistration', ['site_uuid' => $registration->site_uuid]);
         self::$registration = null;
+    }
+
+    /**
+     * Queue a deduplicated ad-hoc update request for the provided site UUID.
+     *
+     * @param string $siteuuid Site UUID requesting a refresh
+     * @return bool True when a new task was queued, false when an equivalent task already exists
+     */
+    public static function queue_update_request_task(string $siteuuid): bool {
+        $siteuuid = trim($siteuuid);
+        if ($siteuuid === '' || self::has_pending_update_request_task($siteuuid)) {
+            return false;
+        }
+
+        $task = new \tool_moodiyregistration\task\process_update_request();
+        $task->set_custom_data(['site_uuid' => $siteuuid]);
+        // Keep the explicit UUID pre-check for a deterministic boolean return value.
+        // queue_adhoc_task(..., true) remains the final race-safe deduplication guard.
+        \core\task\manager::queue_adhoc_task($task, true);
+
+        return true;
+    }
+
+    /**
+     * Determine whether an automatic registration update would be a no-op.
+     *
+     * @param array $siteinfo The current automatic update payload
+     * @return bool
+     */
+    private static function should_skip_automatic_update(array $siteinfo, bool $force = false): bool {
+        if ($force) {
+            return false;
+        }
+
+        $savedhash = get_config('tool_moodiyregistration', self::LAST_SUCCESSFUL_UPDATE_HASH);
+        if (!is_string($savedhash) || $savedhash === '') {
+            return false;
+        }
+
+        return hash_equals($savedhash, self::build_automatic_update_payload_hash($siteinfo));
+    }
+
+    /**
+     * Persist the last successful automatic update payload fingerprint.
+     *
+     * @param array $siteinfo The current automatic update payload
+     */
+    private static function remember_automatic_update_payload_hash(array $siteinfo): void {
+        set_config(
+            self::LAST_SUCCESSFUL_UPDATE_HASH,
+            self::build_automatic_update_payload_hash($siteinfo),
+            'tool_moodiyregistration'
+        );
+    }
+
+    /**
+     * Build a stable fingerprint for automatic registration updates.
+     *
+     * @param array $siteinfo The current automatic update payload
+     * @return string
+     */
+    private static function build_automatic_update_payload_hash(array $siteinfo): string {
+        $fingerprintpayload = $siteinfo;
+        unset($fingerprintpayload['timestamp']);
+        unset($fingerprintpayload['site_uuid']);
+        ksort($fingerprintpayload);
+
+        return hash('sha256', json_encode($fingerprintpayload));
+    }
+
+    /**
+     * Determine whether the same update request task is already queued.
+     *
+     * @param string $siteuuid
+     * @return bool
+     */
+    private static function has_pending_update_request_task(string $siteuuid): bool {
+        $tasks = \core\task\manager::get_adhoc_tasks(\tool_moodiyregistration\task\process_update_request::class);
+
+        foreach ($tasks as $task) {
+            $customdata = $task->get_custom_data();
+            if (($customdata->site_uuid ?? null) === $siteuuid) {
+                return true;
+            }
+        }
+
+        return false;
     }
 
 }

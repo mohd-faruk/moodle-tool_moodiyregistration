@@ -36,6 +36,6 @@ class process_update_request extends \core\task\adhoc_task {
      * Execute the task.
      */
     public function execute() {
-        \tool_moodiyregistration\registration::update_registration();
+        \tool_moodiyregistration\registration::update_registration(true);
     }
 }

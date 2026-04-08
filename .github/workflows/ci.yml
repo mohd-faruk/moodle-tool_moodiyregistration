@@ -12,7 +12,6 @@ jobs:
     with:
       #codechecker_max_warnings: 0 # CI should now fail on phpcs / code checker warnings.
       disable_phpdoc: true
-      disable_phpcpd: true
       disable_phpcs: true
       disable_behat: true
       disable_grunt: true
