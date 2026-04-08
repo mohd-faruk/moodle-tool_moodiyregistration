@@ -118,6 +118,7 @@ class registration_test extends \advanced_testcase {
         $this->assertNotEmpty($record);
         $this->assertEquals('test-uuid-123456789', $record->site_uuid);
         $this->assertEquals($CFG->wwwroot, $record->site_url);
+        $this->assertNotSame('', (string) get_config('tool_moodiyregistration', registration::LAST_SUCCESSFUL_UPDATE_HASH));
     }
 
     /**
@@ -198,6 +199,7 @@ class registration_test extends \advanced_testcase {
 
         // Check the result.
         $this->assertTrue($result);
+        $this->assertNotSame('', (string) get_config('tool_moodiyregistration', registration::LAST_SUCCESSFUL_UPDATE_HASH));
 
         // Verify the record was updated.
         $updated = $DB->get_record('tool_moodiyregistration', ['id' => $recordid]);
@@ -263,11 +265,38 @@ class registration_test extends \advanced_testcase {
 
         registration::update_registration();
         $firstupdate = $DB->get_record('tool_moodiyregistration', ['id' => $recordid]);
+        $savedhash = get_config('tool_moodiyregistration', registration::LAST_SUCCESSFUL_UPDATE_HASH);
+        $this->assertNotSame('', (string) $savedhash);
 
         registration::update_registration();
         $secondupdate = $DB->get_record('tool_moodiyregistration', ['id' => $recordid]);
 
         $this->assertEquals($firstupdate->timemodified, $secondupdate->timemodified);
+        $this->assertSame($savedhash, get_config('tool_moodiyregistration', registration::LAST_SUCCESSFUL_UPDATE_HASH));
+    }
+
+    /**
+     * Test automatic update payload hashes ignore volatile timestamp and UUID fields.
+     * @covers ::build_automatic_update_payload_hash
+     */
+    public function test_build_automatic_update_payload_hash_ignores_timestamp_and_site_uuid(): void {
+        $siteinfo = [
+            'site_name' => 'Stable Moodle Site',
+            'language' => 'en',
+            'timestamp' => 1700000000,
+            'site_uuid' => 'uuid-one',
+        ];
+        $changedvolatilefields = [
+            'site_name' => 'Stable Moodle Site',
+            'language' => 'en',
+            'timestamp' => 1800000000,
+            'site_uuid' => 'uuid-two',
+        ];
+
+        $this->assertSame(
+            $this->invoke_private_static_method('build_automatic_update_payload_hash', $siteinfo),
+            $this->invoke_private_static_method('build_automatic_update_payload_hash', $changedvolatilefields)
+        );
     }
 
     /**
@@ -289,6 +318,18 @@ class registration_test extends \advanced_testcase {
         sort($customdata);
 
         $this->assertSame(['queued-uuid-123', 'queued-uuid-456'], $customdata);
+    }
+
+    /**
+     * Test empty update request UUIDs are rejected before task queueing.
+     * @covers ::queue_update_request_task
+     */
+    public function test_queue_update_request_task_rejects_empty_site_uuid(): void {
+        $this->assertFalse(registration::queue_update_request_task(''));
+        $this->assertFalse(registration::queue_update_request_task('   '));
+
+        $tasks = \core\task\manager::get_adhoc_tasks(\tool_moodiyregistration\task\process_update_request::class);
+        $this->assertCount(0, $tasks);
     }
 
     /**
@@ -318,10 +359,11 @@ class registration_test extends \advanced_testcase {
         registration::update_registration();
         $firstupdate = $DB->get_record('tool_moodiyregistration', ['id' => $recordid]);
 
+        sleep(1);
         registration::update_registration(true);
         $secondupdate = $DB->get_record('tool_moodiyregistration', ['id' => $recordid]);
 
-        $this->assertGreaterThanOrEqual($firstupdate->timemodified, $secondupdate->timemodified);
+        $this->assertGreaterThan($firstupdate->timemodified, $secondupdate->timemodified);
     }
 
     /**
@@ -421,6 +463,7 @@ class registration_test extends \advanced_testcase {
 
         // Set the mock for tests.
         $CFG->tool_moodiyregistration_test_api_wrapper = $apiwrapper;
+        set_config(registration::LAST_SUCCESSFUL_UPDATE_HASH, 'existing-hash', 'tool_moodiyregistration');
 
         // Update the registration.
         $result = registration::update_registration();
@@ -432,7 +475,9 @@ class registration_test extends \advanced_testcase {
         // The local registration should be deleted for data integrity.
         $deleted = !$DB->record_exists('tool_moodiyregistration', ['id' => $recordid]);
         $this->assertTrue($deleted, 'Local registration should be deleted if not found on external site.');
+        $this->assertFalse(get_config('tool_moodiyregistration', registration::LAST_SUCCESSFUL_UPDATE_HASH));
     }
+
     /**
      * Test site unregistration when registration does not exist on external site.
      * @covers ::unregister
@@ -499,6 +544,7 @@ class registration_test extends \advanced_testcase {
 
         $this->assertSame('ok', $result['status']);
         $this->assertSame('new-uuid-654321', $result['site_uuid']);
+        // A single stale row is reused in place, so repair does not report an extra deletion here.
         $this->assertSame(0, $result['deleted_records']);
         $this->assertTrue($result['recreated']);
         $this->assertSame('ok', $result['remote_sync_status']);
@@ -605,5 +651,19 @@ class registration_test extends \advanced_testcase {
         global $CFG;
 
         $CFG->forced_plugin_settings = ['auth_maintenance' => []];
+    }
+
+    /**
+     * Invoke a private static registration helper in a focused unit test.
+     *
+     * @param string $method
+     * @param mixed ...$arguments
+     * @return mixed
+     */
+    private function invoke_private_static_method(string $method, ...$arguments) {
+        $reflection = new \ReflectionMethod(registration::class, $method);
+        $reflection->setAccessible(true);
+
+        return $reflection->invokeArgs(null, $arguments);
     }
 }

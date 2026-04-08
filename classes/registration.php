@@ -1125,6 +1125,8 @@ class registration {
 
         $task = new \tool_moodiyregistration\task\process_update_request();
         $task->set_custom_data(['site_uuid' => $siteuuid]);
+        // Keep the explicit UUID pre-check for a deterministic boolean return value.
+        // queue_adhoc_task(..., true) remains the final race-safe deduplication guard.
         \core\task\manager::queue_adhoc_task($task, true);
 
         return true;
@@ -1169,11 +1171,12 @@ class registration {
      * @return string
      */
     private static function build_automatic_update_payload_hash(array $siteinfo): string {
-        unset($siteinfo['timestamp']);
-        unset($siteinfo['site_uuid']);
-        ksort($siteinfo);
+        $fingerprintpayload = $siteinfo;
+        unset($fingerprintpayload['timestamp']);
+        unset($fingerprintpayload['site_uuid']);
+        ksort($fingerprintpayload);
 
-        return hash('sha256', json_encode($siteinfo));
+        return hash('sha256', json_encode($fingerprintpayload));
     }
 
     /**
