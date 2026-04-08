@@ -238,6 +238,60 @@ class registration_test extends \advanced_testcase {
     }
 
     /**
+     * Test duplicate automatic registration updates are skipped when nothing changed.
+     * @covers ::update_registration
+     */
+    public function test_update_registration_skips_unchanged_payload(): void {
+        global $DB, $CFG;
+
+        $record = (object) [
+            'site_uuid' => 'test-uuid-duplicate-skip',
+            'site_url' => 'https://example.moodle.org',
+            'timecreated' => time(),
+            'timemodified' => time() - 86400,
+        ];
+        $recordid = $DB->insert_record('tool_moodiyregistration', $record);
+
+        $apiwrapper = $this->createMock(\tool_moodiyregistration\api_wrapper::class);
+        $apiwrapper->expects($this->once())
+            ->method('update_registration')
+            ->willReturn([
+                'success' => true,
+                'message' => 'Site registration updated successfully',
+            ]);
+        $CFG->tool_moodiyregistration_test_api_wrapper = $apiwrapper;
+
+        registration::update_registration();
+        $firstupdate = $DB->get_record('tool_moodiyregistration', ['id' => $recordid]);
+
+        registration::update_registration();
+        $secondupdate = $DB->get_record('tool_moodiyregistration', ['id' => $recordid]);
+
+        $this->assertEquals($firstupdate->timemodified, $secondupdate->timemodified);
+    }
+
+    /**
+     * Test update requests are de-duplicated while an equivalent ad-hoc task is already queued.
+     * @covers ::queue_update_request_task
+     */
+    public function test_queue_update_request_task_deduplicates_by_site_uuid(): void {
+        $this->assertTrue(registration::queue_update_request_task('queued-uuid-123'));
+        $this->assertFalse(registration::queue_update_request_task('queued-uuid-123'));
+        $this->assertTrue(registration::queue_update_request_task('queued-uuid-456'));
+
+        $tasks = \core\task\manager::get_adhoc_tasks(\tool_moodiyregistration\task\process_update_request::class);
+
+        $this->assertCount(2, $tasks);
+        $customdata = array_map(
+            static fn($task) => $task->get_custom_data()->site_uuid ?? null,
+            $tasks
+        );
+        sort($customdata);
+
+        $this->assertSame(['queued-uuid-123', 'queued-uuid-456'], $customdata);
+    }
+
+    /**
      * Test getting site information.
      * @covers ::get_site_info
      */

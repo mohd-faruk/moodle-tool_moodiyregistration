@@ -133,8 +133,7 @@ if (isset($postdata['site_uuid']) && isset($postdata['id'])) {
         echo json_encode($response);
 
         // Create task to process the update request.
-        $task = new \tool_moodiyregistration\task\process_update_request();
-        core\task\manager::queue_adhoc_task($task);
+        \tool_moodiyregistration\registration::queue_update_request_task($postdata['site_uuid']);
 
         // Trigger a site registration update request event.
         $event = \tool_moodiyregistration\event\update_request::create([
