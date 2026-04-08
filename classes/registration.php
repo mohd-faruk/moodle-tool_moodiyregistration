@@ -894,7 +894,7 @@ class registration {
             self::remember_automatic_update_payload_hash($siteinfo);
             $remotesynced = true;
         } catch (moodle_exception $e) {
-            debugging('Error updating internal site during repair: ' . $e->getMessage());
+            // A remote sync miss here is recoverable. The caller receives a pending status and can retry later.
         }
         self::$registration = null;
 
