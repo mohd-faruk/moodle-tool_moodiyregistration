@@ -738,7 +738,9 @@ class registration {
         $siteinfo['site_uuid'] = $registration->site_uuid;
 
         if (self::should_skip_automatic_update($siteinfo, $force)) {
-            mtrace('Skipping registration update because the automatic payload is unchanged.');
+            if (!PHPUNIT_TEST) {
+                mtrace('Skipping registration update because the automatic payload is unchanged.');
+            }
             return true;
         }
 

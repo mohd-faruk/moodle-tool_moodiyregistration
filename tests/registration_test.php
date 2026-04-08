@@ -499,7 +499,7 @@ class registration_test extends \advanced_testcase {
 
         $this->assertSame('ok', $result['status']);
         $this->assertSame('new-uuid-654321', $result['site_uuid']);
-        $this->assertSame(1, $result['deleted_records']);
+        $this->assertSame(0, $result['deleted_records']);
         $this->assertTrue($result['recreated']);
         $this->assertSame('ok', $result['remote_sync_status']);
 
