@@ -18,8 +18,8 @@
  * Verification endpoint for Moodiy integration.
  *
  * @package    tool_moodiyregistration
- * @copyright  2025 VidyaMantra <pinky@vidyamantra.com>
- * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
+ * @copyright   2025-2026 MoodiyCloud <support@moodiycloud.com>
+ * @license    https://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 
 // Disable moodle specific debug messages and any errors in output.
@@ -42,18 +42,20 @@ use tool_moodiyregistration\api;
 header('Content-Type: application/json; charset=utf-8');
 
 // Allow CORS requests from the Laravel application.
-header('Access-Control-Allow-Origin:'. api::get_apiurl());
+header('Access-Control-Allow-Origin: ' . api::get_api_origin());
 header('Access-Control-Allow-Methods: POST, OPTIONS');
-header('Access-Control-Allow-Headers: Content-Type, Authorization');
+header('Access-Control-Allow-Headers: Content-Type, Authorization, Key');
+
+$requestmethod = strtoupper($_SERVER['REQUEST_METHOD'] ?? '');
 
 // Handle OPTIONS request (preflight).
-if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
+if ($requestmethod === 'OPTIONS') {
     http_response_code(200);
     exit;
 }
 
 // Only accept POST requests.
-if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+if ($requestmethod !== 'POST') {
     http_response_code(405); // Method Not Allowed.
     echo json_encode([
         'status' => 'error',
@@ -67,24 +69,24 @@ if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
 // for example in the Moodle config file or database.
 $cache = \cache::make_from_params(\cache_store::MODE_APPLICATION, 'tool_moodiyregistration', 'registration');
 $expected_verification_key = $cache->get('verificationkey');
+if (!is_string($expected_verification_key)) {
+    $expected_verification_key = '';
+}
 
 // Get the verification key from the POST data.
 $input = file_get_contents('php://input');
 $postdata = json_decode($input, true);
 
 // If raw JSON parsing fails, try regular POST data.
-if (json_last_error() !== JSON_ERROR_NONE) {
+if (!is_array($postdata)) {
     $postdata = $_POST;
+}
+if (!is_array($postdata)) {
+    $postdata = [];
 }
 
 // Extract verification key.
-$verification_key = isset($postdata['verification_key']) ?
-    clean_param($postdata['verification_key'], PARAM_ALPHANUMEXT) : '';
-
-// Optional: Log the request for debugging (enable only when needed).
-if (!empty($CFG->debugdeveloper)) {
-    debugging('Verification request received: ' . var_export($postdata, true));
-}
+$verification_key = clean_param((string)($postdata['verification_key'] ?? ''), PARAM_ALPHANUMEXT);
 
 // Validate the verification key.
 if (!empty($verification_key) && hash_equals($expected_verification_key, $verification_key)) {

@@ -18,8 +18,8 @@
  * Renderer for Moodiy registration tool.
  *
  * @package    tool_moodiyregistration
- * @copyright  2025 VidyaMantra Edusystem pvt ltd. <vidyamantra.com>
- * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
+ * @copyright   2025-2026 MoodiyCloud <support@moodiycloud.com>
+ * @license    https://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 
 namespace tool_moodiyregistration\output;
@@ -28,8 +28,8 @@ namespace tool_moodiyregistration\output;
  * Renderer for Moodiy registration tool.
  *
  * @package    tool_moodiyregistration
- * @copyright  2025 Pinky Sharma <pinky@vidyamantra.com>
- * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
+ * @copyright   2025-2026 MoodiyCloud <support@moodiycloud.com>
+ * @license    https://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 class renderer extends \plugin_renderer_base {
 

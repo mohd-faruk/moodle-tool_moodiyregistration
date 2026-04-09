@@ -1,5 +1,5 @@
 <?php
-// This file is part of Moodle - http://moodle.org/
+// This file is part of Moodle - https://moodle.org/
 //
 // Moodle is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -12,14 +12,14 @@
 // GNU General Public License for more details.
 //
 // You should have received a copy of the GNU General Public License
-// along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
+// along with Moodle.  If not, see <https://www.gnu.org/licenses/>.
 
 /**
  * Class api for moodiy communication
  *
  * @package    tool_moodiyregistration
- * @copyright  2025 VidyaMantra <pinky@vidyamantra.com>
- * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
+ * @copyright   2025-2026 MoodiyCloud <support@moodiycloud.com>
+ * @license    https://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 
 namespace tool_moodiyregistration;
@@ -35,8 +35,8 @@ use moodle_url;
  * Provides methods to communicate with the hub (sites directory) web services.
  *
  * @package    tool_moodiyregistration
- * @copyright  2025 VidyaMantra <pinky@vidyamantra.com>
- * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
+ * @copyright   2025-2026 MoodiyCloud <support@moodiycloud.com>
+ * @license    https://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 class api {
     /** @var string The Moodiy API URL */
@@ -49,11 +49,44 @@ class api {
      *
      * @return string The API URL.
      */
-    public static function get_apiurl() {
+    public static function get_api_base_url(): string {
         global $CFG;
 
-        $apiurl = $CFG->moodiy_api_url ?? self::MOODIY_API_URL;
-        return rtrim($apiurl, '/') . '/api';
+        $apiurl = get_config('tool_moodiyregistration', 'apiurl') ?: ($CFG->moodiy_api_url ?? self::MOODIY_API_URL);
+        $apiurl = rtrim((string)$apiurl, '/');
+        if (substr($apiurl, -4) === '/api') {
+            $apiurl = substr($apiurl, 0, -4);
+        }
+
+        return $apiurl;
+    }
+
+    /**
+     * Get the API URL for Moodiy.
+     *
+     * @return string The API URL.
+     */
+    public static function get_apiurl(): string {
+        return self::get_api_base_url() . '/api';
+    }
+
+    /**
+     * Get the allowed web origin for Moodiy callbacks.
+     *
+     * @return string The API origin.
+     */
+    public static function get_api_origin(): string {
+        $parts = parse_url(self::get_api_base_url());
+        if (empty($parts['scheme']) || empty($parts['host'])) {
+            return self::MOODIY_API_URL;
+        }
+
+        $origin = $parts['scheme'] . '://' . $parts['host'];
+        if (!empty($parts['port'])) {
+            $origin .= ':' . $parts['port'];
+        }
+
+        return $origin;
     }
 
     /**

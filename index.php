@@ -1,5 +1,5 @@
 <?php
-// This file is part of Moodle - http://moodle.org/
+// This file is part of Moodle - https://moodle.org/
 //
 // Moodle is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -12,14 +12,14 @@
 // GNU General Public License for more details.
 //
 // You should have received a copy of the GNU General Public License
-// along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
+// along with Moodle.  If not, see <https://www.gnu.org/licenses/>.
 
 /**
  * Version details.
  *
  * @package    tool_moodiyregistration
- * @copyright  2025 Vidyamantra <pinky@vidyamantra.com>
- * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
+ * @copyright   2025-2026 MoodiyCloud <support@moodiycloud.com>
+ * @license    https://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  *
  * This page displays the moodiy registration form.
  * It also handles update operation by web service.

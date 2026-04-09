@@ -21,7 +21,7 @@ namespace tool_moodiyregistration\event;
  *
  * @package     tool_moodiyregistration
  * @category    event
- * @copyright   2025 VidyaMantra <pinky@vidyamantra.com>
+ * @copyright   2025-2026 MoodiyCloud <support@moodiycloud.com>
  * @license     https://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 class moodiy_unregistration extends \core\event\base {

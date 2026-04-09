@@ -1,5 +1,5 @@
 <?php
-// This file is part of Moodle - http://moodle.org/
+// This file is part of Moodle - https://moodle.org/
 //
 // Moodle is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -12,14 +12,14 @@
 // GNU General Public License for more details.
 //
 // You should have received a copy of the GNU General Public License
-// along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
+// along with Moodle.  If not, see <https://www.gnu.org/licenses/>.
 
 /**
  * Class registration
  *
  * @package    tool_moodiyregistration
- * @copyright  2025 VidyaMantra <pinky@vidyamantra.com>
- * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
+ * @copyright   2025-2026 MoodiyCloud <support@moodiycloud.com>
+ * @license    https://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 
 namespace tool_moodiyregistration;
@@ -38,8 +38,8 @@ use tool_moodiyregistration\api;
  * Methods to use when registering the site at the moodiy sites directory.
  *
  * @package    tool_moodiyregistration
- * @copyright  2025 VidyaMantra <pinky@vidyamantra.com>
- * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
+ * @copyright   2025-2026 MoodiyCloud <support@moodiycloud.com>
+ * @license    https://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 class registration {
 
@@ -1062,9 +1062,9 @@ class registration {
      * @param string $message The warning message to display.
      * @param string|moodle_url|\single_button $continue The URL or button for the continue action.
      * @param array $displayoptions Optional display options:
-     *      - confirmtitle: Title of the warning box (default: 'Warning').
-     *      - continuestr: Text for the continue button (default: 'Continue').
-     *      - type: Button type for the continue button (default: primary).
+     *    2025-2026 MoodiyCloud <support@moodiycloud.com>
+     *    2025-2026 MoodiyCloud <support@moodiycloud.com>
+     *    2025-2026 MoodiyCloud <support@moodiycloud.com>
      *
      * @return string The HTML output of the warning box.
      * @throws coding_exception If the $continue parameter is invalid.

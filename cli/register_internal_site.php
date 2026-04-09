@@ -18,7 +18,7 @@
  * Recreate the local internal site registration record for a provided UUID.
  *
  * @package     tool_moodiyregistration
- * @copyright   2026 VidyaMantra <support@moodiy.com>
+ * @copyright   2025-2026 MoodiyCloud <support@moodiycloud.com>
  * @license     https://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 

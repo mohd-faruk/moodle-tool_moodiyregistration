@@ -19,7 +19,7 @@
  *
  * @package     tool_moodiyregistration
  * @category    string
- * @copyright   2025 VidyaMantra <pinky@vidyamantra.com>
+ * @copyright   2025-2026 MoodiyCloud <support@moodiycloud.com>
  * @license     https://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 
@@ -39,6 +39,30 @@ $string['organisationname_help'] = 'The organisation name is shown in the site l
 $string['pleaserefreshregistration'] = 'Your site is registered. Registration last updated {$a}.<br />Your registration will be kept up to date. You can also manually update your registration at any time.';
 $string['pleaserefreshregistrationunknown'] = 'Your site has been registered but the registration date is unknown. Please update your registration using the \'Update registration\' button.';
 $string['pluginname'] = 'Moodiy registration';
+$string['privacy:metadata:config'] = 'The plugin stores site registration settings in Moodle configuration before and after the site is registered with MoodiyCloud.';
+$string['privacy:metadata:config:site_admin_email'] = 'The contact email address sent to MoodiyCloud for the registered site.';
+$string['privacy:metadata:config:site_country_code'] = 'The country code reported for the registered site.';
+$string['privacy:metadata:config:site_description'] = 'The site description sent to MoodiyCloud during registration and updates.';
+$string['privacy:metadata:config:site_language'] = 'The primary language reported for the registered site.';
+$string['privacy:metadata:config:site_name'] = 'The site name sent to MoodiyCloud during registration and updates.';
+$string['privacy:metadata:config:site_organisation_type'] = 'The organisation type reported for the registered site.';
+$string['privacy:metadata:config:site_policyagreed'] = 'A flag indicating whether the site administrator agreed to the registration policy.';
+$string['privacy:metadata:config:site_privacy'] = 'The site listing preference selected during registration.';
+$string['privacy:metadata:moodiycloud'] = 'In order to register the site and keep the registration up to date, the plugin exchanges site registration data with MoodiyCloud.';
+$string['privacy:metadata:moodiycloud:admin_email'] = 'The site contact email address shared with MoodiyCloud.';
+$string['privacy:metadata:moodiycloud:country_code'] = 'The site country code shared with MoodiyCloud.';
+$string['privacy:metadata:moodiycloud:description'] = 'The site description shared with MoodiyCloud.';
+$string['privacy:metadata:moodiycloud:language'] = 'The site language shared with MoodiyCloud.';
+$string['privacy:metadata:moodiycloud:organisation_type'] = 'The organisation type shared with MoodiyCloud.';
+$string['privacy:metadata:moodiycloud:site_listing'] = 'The site listing preference shared with MoodiyCloud.';
+$string['privacy:metadata:moodiycloud:site_metadata'] = 'Aggregated site statistics and registration metadata shared with MoodiyCloud.';
+$string['privacy:metadata:moodiycloud:site_name'] = 'The site name shared with MoodiyCloud.';
+$string['privacy:metadata:moodiycloud:site_url'] = 'The site URL shared with MoodiyCloud.';
+$string['privacy:metadata:tool_moodiyregistration'] = 'The plugin stores the local registration record used to link this Moodle site with MoodiyCloud.';
+$string['privacy:metadata:tool_moodiyregistration:site_url'] = 'The site URL stored for the registered site.';
+$string['privacy:metadata:tool_moodiyregistration:site_uuid'] = 'The unique site identifier assigned by MoodiyCloud.';
+$string['privacy:metadata:tool_moodiyregistration:timecreated'] = 'The time the local registration record was created.';
+$string['privacy:metadata:tool_moodiyregistration:timemodified'] = 'The time the local registration record was last updated.';
 $string['registerwithmoodiy'] = 'Register your site with MoodiyCloud';
 $string['registerwithmoodiycomplete'] = 'Complete your site registration.';
 $string['registerwithmoodiyremove'] = 'You are about to unregister your site, which will result in the loss of access to all Moodiycloud services and products. However, you may re-register at any time. Are you sure you want to proceed?';

@@ -22,8 +22,8 @@ defined('MOODLE_INTERNAL') || die();
  * Class api_wrapper
  *
  * @package    tool_moodiyregistration
- * @copyright  2025 VidyaMantra <pinky@vidyamantra.com>
- * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
+ * @copyright   2025-2026 MoodiyCloud <support@moodiycloud.com>
+ * @license    https://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 
 /**

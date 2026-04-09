@@ -18,8 +18,8 @@
  * Update endpoint for Moodiy integration.
  *
  * @package    tool_moodiyregistration
- * @copyright  2025 VidyaMantra <pinky@vidyamantra.com>
- * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
+ * @copyright   2025-2026 MoodiyCloud <support@moodiycloud.com>
+ * @license    https://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 
 // Disable moodle specific debug messages and any errors in output.
@@ -42,18 +42,20 @@ use tool_moodiyregistration\api;
 header('Content-Type: application/json; charset=utf-8');
 
 // Allow CORS requests from the Laravel application.
-header('Access-Control-Allow-Origin:'. api::get_apiurl());
+header('Access-Control-Allow-Origin: ' . api::get_api_origin());
 header('Access-Control-Allow-Methods: POST, OPTIONS');
-header('Access-Control-Allow-Headers: Content-Type, Authorization');
+header('Access-Control-Allow-Headers: Content-Type, Authorization, Key');
+
+$requestmethod = strtoupper($_SERVER['REQUEST_METHOD'] ?? '');
 
 // Handle OPTIONS request (preflight).
-if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
+if ($requestmethod === 'OPTIONS') {
     http_response_code(200);
     exit;
 }
 
 // Only accept POST requests.
-if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+if ($requestmethod !== 'POST') {
     http_response_code(405); // Method Not Allowed.
     echo json_encode([
         'status' => 'error',
@@ -91,6 +93,7 @@ function get_all_headers() {
 }
 
 // Get header key.
+$headerkey = '';
 $headers = get_all_headers();
 foreach ($headers as $key => $value) {
     if (strtolower($key) === 'key') {
@@ -104,13 +107,46 @@ $input = file_get_contents('php://input');
 $postdata = json_decode($input, true);
 
 // If raw JSON parsing fails, try regular POST data.
-if (json_last_error() !== JSON_ERROR_NONE) {
+if (!is_array($postdata)) {
     $postdata = $_POST;
 }
+if (!is_array($postdata)) {
+    $postdata = [];
+}
+
+if (!isset($postdata['site_uuid'], $postdata['id']) || !is_scalar($postdata['site_uuid']) || !is_scalar($postdata['id'])) {
+    http_response_code(400); // Bad Request.
+    echo json_encode([
+        'status' => 'error',
+        'message' => 'Invalid data payload',
+    ]);
+    exit;
+}
+
+$payloaddata = $postdata;
+$siteuuid = clean_param((string)$postdata['site_uuid'], PARAM_ALPHANUMEXT);
+$recordid = clean_param((string)$postdata['id'], PARAM_INT);
+if ($siteuuid === '' || $recordid === '') {
+    http_response_code(400); // Bad Request.
+    echo json_encode([
+        'status' => 'error',
+        'message' => 'Invalid data payload',
+    ]);
+    exit;
+}
+
 // Check for valid payload.
-ksort($postdata);
-$payload = json_encode($postdata);
-$hmackey = hash_hmac('sha256', $payload, $postdata['site_uuid']);
+ksort($payloaddata);
+$payload = json_encode($payloaddata);
+if ($payload === false) {
+    http_response_code(400); // Bad Request.
+    echo json_encode([
+        'status' => 'error',
+        'message' => 'Invalid data payload',
+    ]);
+    exit;
+}
+$hmackey = hash_hmac('sha256', $payload, (string)$postdata['site_uuid']);
 
 if (!hash_equals($hmackey, $headerkey)) {
     // Invalid HMAC key.
@@ -125,7 +161,7 @@ if (!hash_equals($hmackey, $headerkey)) {
 // Validate the verification data.
 if (isset($postdata['site_uuid']) && isset($postdata['id'])) {
 
-    if ($DB->record_exists('tool_moodiyregistration', ['site_uuid' => $postdata['site_uuid']])) {
+    if ($DB->record_exists('tool_moodiyregistration', ['site_uuid' => $siteuuid])) {
         $response = [
             'status' => 'success',
             'message' => 'ok',
@@ -133,14 +169,14 @@ if (isset($postdata['site_uuid']) && isset($postdata['id'])) {
         echo json_encode($response);
 
         // Create task to process the update request.
-        \tool_moodiyregistration\registration::queue_update_request_task($postdata['site_uuid']);
+        \tool_moodiyregistration\registration::queue_update_request_task($siteuuid);
 
         // Trigger a site registration update request event.
         $event = \tool_moodiyregistration\event\update_request::create([
             'context' => \context_system::instance(),
-            'objectid' => $postdata['id'],
+            'objectid' => (int)$recordid,
             'other' => [
-                'site_uuid' => $postdata['site_uuid'],
+                'site_uuid' => $siteuuid,
             ],
         ]);
         $event->trigger();
