@@ -24,8 +24,6 @@
 
 namespace tool_moodiyregistration;
 
-defined('MOODLE_INTERNAL') || die();
-
 use moodle_exception;
 use moodle_url;
 use context_system;
@@ -901,6 +899,7 @@ class registration {
             $remotesynced = true;
         } catch (moodle_exception $e) {
             // A remote sync miss here is recoverable. The caller receives a pending status and can retry later.
+            debugging('Unable to sync repaired internal site registration with Moodiy: ' . $e->getMessage());
         }
         self::$registration = null;
 
@@ -941,7 +940,7 @@ class registration {
 
         if ($matchingrecord) {
             $record = $matchingrecord;
-        } elseif ($records !== []) {
+        } else if ($records !== []) {
             $record = $records[0];
         } else {
             $record = (object) [

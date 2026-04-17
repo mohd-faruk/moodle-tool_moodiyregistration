@@ -16,8 +16,6 @@
 
 namespace tool_moodiyregistration;
 
-defined('MOODLE_INTERNAL') || die();
-
 /**
  * Class api_wrapper
  *
