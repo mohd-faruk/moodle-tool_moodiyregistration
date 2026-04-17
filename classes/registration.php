@@ -899,7 +899,7 @@ class registration {
             $remotesynced = true;
         } catch (moodle_exception $e) {
             // A remote sync miss here is recoverable. The caller receives a pending status and can retry later.
-            debugging('Unable to sync repaired internal site registration with Moodiy: ' . $e->getMessage());
+            $remotesynced = false;
         }
         self::$registration = null;
 
