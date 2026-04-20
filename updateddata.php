@@ -158,6 +158,15 @@ if (!hash_equals($hmackey, $headerkey)) {
     exit;
 }
 
+if (array_key_exists('timestamp', $postdata)
+    && !\tool_moodiyregistration\registration::is_fresh_callback_timestamp($postdata['timestamp'])) {
+    http_response_code(400); // Bad Request.
+    // Legacy callers may omit `timestamp`; once present, freshness is part of the signed contract.
+    // Keep this compatibility branch until every sender in the fleet is known to include `timestamp`.
+    echo json_encode(\tool_moodiyregistration\registration::stale_timestamp_error_response());
+    exit;
+}
+
 // Validate the verification data.
 if (isset($postdata['site_uuid']) && isset($postdata['id'])) {
 

@@ -28,8 +28,16 @@
  */
 function xmldb_tool_moodiyregistration_install() {
     global $DB, $CFG;
+    $forcedpluginsettings = is_array($CFG->forced_plugin_settings ?? null) ? $CFG->forced_plugin_settings : [];
+    // Install can run while related plugin code is still settling; keep a forced-settings fallback
+    // for older runtime copies that do not expose the shared helper yet.
+    $isinternal = class_exists('\tool_moodiyregistration\registration')
+        && is_callable(['\tool_moodiyregistration\registration', 'is_internal_site'])
+        ? \tool_moodiyregistration\registration::is_internal_site()
+        : array_key_exists('auth_maintenance', $forcedpluginsettings);
+
     // Check config if the site register on Moodiy .
-    if (array_key_exists("auth_maintenance", $CFG->forced_plugin_settings)) {
+    if ($isinternal) {
         // If the site is set to register on Moodiy, proceed with registration.
         if (!empty($CFG->moodiysiteregistrationuuid)) {
             \tool_moodiyregistration\registration::register_internal_site($CFG->moodiysiteregistrationuuid);

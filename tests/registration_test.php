@@ -647,6 +647,48 @@ class registration_test extends \advanced_testcase {
         $this->assertSame('existing-uuid-123456', $record->site_uuid);
     }
 
+    /**
+     * Test internal-site detection tolerates missing forced plugin settings.
+     * @covers ::is_internal_site
+     */
+    public function test_is_internal_site_handles_missing_and_present_forced_plugin_settings(): void {
+        global $CFG;
+
+        unset($CFG->forced_plugin_settings);
+        $this->assertFalse(registration::is_internal_site());
+
+        $CFG->forced_plugin_settings = [];
+        $this->assertFalse(registration::is_internal_site());
+
+        $this->markAsInternalSite();
+        $this->assertTrue(registration::is_internal_site());
+    }
+
+    /**
+     * Test signed callback timestamps are accepted only within the freshness window.
+     * @covers ::is_fresh_callback_timestamp
+     */
+    public function test_is_fresh_callback_timestamp_enforces_window(): void {
+        $this->assertTrue(registration::is_fresh_callback_timestamp(time()));
+        $this->assertTrue(registration::is_fresh_callback_timestamp((string) time()));
+        $this->assertFalse(registration::is_fresh_callback_timestamp(time() - registration::CALLBACK_FRESHNESS_WINDOW - 1));
+        $this->assertFalse(registration::is_fresh_callback_timestamp(time() + 1));
+        $this->assertFalse(registration::is_fresh_callback_timestamp('-1'));
+        $this->assertFalse(registration::is_fresh_callback_timestamp('not-a-timestamp'));
+        $this->assertFalse(registration::is_fresh_callback_timestamp(null));
+    }
+
+    /**
+     * Test the stale timestamp error response contract used by the legacy callback endpoints.
+     * @covers ::stale_timestamp_error_response
+     */
+    public function test_stale_timestamp_error_response_matches_callback_contract(): void {
+        $this->assertSame([
+            'status' => 'error',
+            'message' => registration::STALE_TIMESTAMP_MESSAGE,
+        ], registration::stale_timestamp_error_response());
+    }
+
     private function markAsInternalSite(): void {
         global $CFG;
 

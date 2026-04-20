@@ -57,6 +57,12 @@ class registration {
     /** @var string Config key storing the last successful automatic update payload hash. */
     const LAST_SUCCESSFUL_UPDATE_HASH = 'lastsuccessfulupdatehash';
 
+    /** @var int Maximum allowed age/skew in seconds for signed callback timestamps. */
+    const CALLBACK_FRESHNESS_WINDOW = 900;
+
+    /** @var string Shared stale-timestamp callback message mirrored by core and mixed-version fallbacks. */
+    const STALE_TIMESTAMP_MESSAGE = 'Stale timestamp';
+
     /**
      * Checks if site is registered
      *
@@ -972,14 +978,58 @@ class registration {
     /**
      * Determine whether the current Moodle instance is an internal hosted site.
      *
+     * This helper is the shared ADR-007 boundary for the existing production plugins that need
+     * to distinguish internal hosted sites without re-reading `auth_maintenance` directly.
+     *
      * @return bool True when internal hosted-site config is present
      */
-    private static function is_internal_site(): bool {
+    public static function is_internal_site(): bool {
         global $CFG;
 
         $forcedpluginsettings = is_array($CFG->forced_plugin_settings ?? null) ? $CFG->forced_plugin_settings : [];
 
         return array_key_exists('auth_maintenance', $forcedpluginsettings);
+    }
+
+    /**
+     * Build the exact error payload returned when a signed callback timestamp is stale.
+     *
+     * @return array
+     */
+    public static function stale_timestamp_error_response(): array {
+        return [
+            'status' => 'error',
+            'message' => self::STALE_TIMESTAMP_MESSAGE,
+        ];
+    }
+
+    /**
+     * Determine whether a signed callback timestamp is within the allowed freshness window.
+     *
+     * Legacy callers may omit the timestamp entirely. When a timestamp is present it must be a
+     * valid integer epoch value within the configured skew window.
+     *
+     * @param mixed $timestamp
+     * @return bool
+     */
+    public static function is_fresh_callback_timestamp($timestamp): bool {
+        if (!is_scalar($timestamp)) {
+            return false;
+        }
+
+        $timestampvalue = trim((string)$timestamp);
+        if ($timestampvalue === '' || !preg_match('/^\d+$/', $timestampvalue)) {
+            return false;
+        }
+
+        $epochtime = (int)$timestampvalue;
+        if ($epochtime <= 0) {
+            return false;
+        }
+
+        $timedifference = time() - $epochtime;
+
+        return $timedifference >= 0 && $timedifference <= self::CALLBACK_FRESHNESS_WINDOW;
     }
 
     /**
