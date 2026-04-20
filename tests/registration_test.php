@@ -689,6 +689,9 @@ class registration_test extends \advanced_testcase {
         ], registration::stale_timestamp_error_response());
     }
 
+    /**
+     * Mark the fixture as an internal hosted site.
+     */
     private function markAsInternalSite(): void {
         global $CFG;
 

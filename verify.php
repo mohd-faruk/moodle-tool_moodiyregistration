@@ -68,9 +68,9 @@ if ($requestmethod !== 'POST') {
 // In a production environment, this should be stored securely,
 // for example in the Moodle config file or database.
 $cache = \cache::make_from_params(\cache_store::MODE_APPLICATION, 'tool_moodiyregistration', 'registration');
-$expected_verification_key = $cache->get('verificationkey');
-if (!is_string($expected_verification_key)) {
-    $expected_verification_key = '';
+$expectedverificationkey = $cache->get('verificationkey');
+if (!is_string($expectedverificationkey)) {
+    $expectedverificationkey = '';
 }
 
 // Get the verification key from the POST data.
@@ -86,10 +86,10 @@ if (!is_array($postdata)) {
 }
 
 // Extract verification key.
-$verification_key = clean_param((string)($postdata['verification_key'] ?? ''), PARAM_ALPHANUMEXT);
+$verificationkey = clean_param((string)($postdata['verification_key'] ?? ''), PARAM_ALPHANUMEXT);
 
 // Validate the verification key.
-if (!empty($verification_key) && hash_equals($expected_verification_key, $verification_key)) {
+if (!empty($verificationkey) && hash_equals($expectedverificationkey, $verificationkey)) {
     // Valid verification key.
     $response = [
         'status' => 'success',

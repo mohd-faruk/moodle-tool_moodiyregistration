@@ -23,7 +23,6 @@
  */
 
 namespace tool_moodiyregistration;
-
 defined('MOODLE_INTERNAL') || die();
 
 use moodle_exception;
@@ -941,7 +940,7 @@ class registration {
 
         if ($matchingrecord) {
             $record = $matchingrecord;
-        } elseif ($records !== []) {
+        } else if ($records !== []) {
             $record = $records[0];
         } else {
             $record = (object) [

@@ -24,7 +24,6 @@
  */
 
 namespace tool_moodiyregistration\task;
-
 defined('MOODLE_INTERNAL') || die();
 
 /**

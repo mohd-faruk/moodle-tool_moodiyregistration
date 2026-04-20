@@ -15,7 +15,6 @@
 // along with Moodle.  If not, see <https://www.gnu.org/licenses/>.
 
 namespace tool_moodiyregistration\privacy;
-
 defined('MOODLE_INTERNAL') || die();
 
 use core_privacy\local\metadata\collection;
@@ -54,12 +53,13 @@ class provider implements
 
         $collection->add_database_table('config_plugins', [
             'site_admin_email' => 'privacy:metadata:config:site_admin_email',
-            'site_name' => 'privacy:metadata:config:site_name',
+            'site_site_name' => 'privacy:metadata:config:site_site_name',
             'site_description' => 'privacy:metadata:config:site_description',
             'site_language' => 'privacy:metadata:config:site_language',
             'site_country_code' => 'privacy:metadata:config:site_country_code',
             'site_organisation_type' => 'privacy:metadata:config:site_organisation_type',
             'site_privacy' => 'privacy:metadata:config:site_privacy',
+            'plugin_versions' => 'privacy:metadata:config:plugin_versions',
             'site_policyagreed' => 'privacy:metadata:config:site_policyagreed',
         ], 'privacy:metadata:config');
 
