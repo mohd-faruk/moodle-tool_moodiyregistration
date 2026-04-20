@@ -523,7 +523,7 @@ class registration_test extends \advanced_testcase {
     public function test_repair_internal_site_registration_recreates_local_record(): void {
         global $DB, $CFG;
 
-        $this->markasinternalsite();
+        $this->markAsInternalSite();
 
         $oldrecord = (object) [
             'site_uuid' => 'old-uuid-123456',
@@ -564,7 +564,7 @@ class registration_test extends \advanced_testcase {
     public function test_repair_internal_site_registration_returns_pending_when_remote_sync_fails(): void {
         global $DB, $CFG;
 
-        $this->markasinternalsite();
+        $this->markAsInternalSite();
 
         $apiwrapper = $this->createMock(\tool_moodiyregistration\api_wrapper::class);
         $apiwrapper->method('update_registration')->will(
@@ -590,7 +590,7 @@ class registration_test extends \advanced_testcase {
     public function test_repair_internal_site_registration_preserves_saved_site_info(): void {
         global $CFG;
 
-        $this->markasinternalsite();
+        $this->markAsInternalSite();
 
         $data = (object) [
             'site_name' => 'Custom Site Name',
@@ -660,7 +660,7 @@ class registration_test extends \advanced_testcase {
         $CFG->forced_plugin_settings = [];
         $this->assertFalse(registration::is_internal_site());
 
-        $this->markasinternalsite();
+        $this->markAsInternalSite();
         $this->assertTrue(registration::is_internal_site());
     }
 
@@ -692,7 +692,7 @@ class registration_test extends \advanced_testcase {
     /**
      * Mark the fixture as an internal hosted site.
      */
-    private function markasinternalsite(): void {
+    private function markAsInternalSite(): void {
         global $CFG;
 
         $CFG->forced_plugin_settings = ['auth_maintenance' => []];

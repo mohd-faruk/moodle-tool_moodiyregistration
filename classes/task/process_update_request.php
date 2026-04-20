@@ -24,6 +24,7 @@
  */
 
 namespace tool_moodiyregistration\task;
+defined('MOODLE_INTERNAL') || die();
 
 /**
  * Adhoc task to process update requests from Moodiy.

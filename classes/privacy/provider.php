@@ -15,6 +15,7 @@
 // along with Moodle.  If not, see <https://www.gnu.org/licenses/>.
 
 namespace tool_moodiyregistration\privacy;
+defined('MOODLE_INTERNAL') || die();
 
 use core_privacy\local\metadata\collection;
 use core_privacy\local\request\approved_contextlist;
@@ -63,15 +64,15 @@ class provider implements
         ], 'privacy:metadata:config');
 
         $collection->add_external_location_link('moodiycloud', [
-            'site_admin_email' => 'privacy:metadata:moodiycloud:admin_email',
+            'admin_email' => 'privacy:metadata:moodiycloud:admin_email',
             'site_url' => 'privacy:metadata:moodiycloud:site_url',
-            'site_site_name' => 'privacy:metadata:moodiycloud:site_name',
-            'site_description' => 'privacy:metadata:moodiycloud:description',
-            'site_language' => 'privacy:metadata:moodiycloud:language',
-            'site_country_code' => 'privacy:metadata:moodiycloud:country_code',
-            'site_organisation_type' => 'privacy:metadata:moodiycloud:organisation_type',
-            'site_privacy' => 'privacy:metadata:moodiycloud:site_listing',
-            'plugin_versions' => 'privacy:metadata:moodiycloud:site_metadata',
+            'site_name' => 'privacy:metadata:moodiycloud:site_name',
+            'description' => 'privacy:metadata:moodiycloud:description',
+            'language' => 'privacy:metadata:moodiycloud:language',
+            'country_code' => 'privacy:metadata:moodiycloud:country_code',
+            'site_listing' => 'privacy:metadata:moodiycloud:site_listing',
+            'organisation_type' => 'privacy:metadata:moodiycloud:organisation_type',
+            'site_metadata' => 'privacy:metadata:moodiycloud:site_metadata',
         ], 'privacy:metadata:moodiycloud');
 
         return $collection;

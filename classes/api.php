@@ -23,6 +23,7 @@
  */
 
 namespace tool_moodiyregistration;
+defined('MOODLE_INTERNAL') || die();
 
 use moodle_exception;
 use curl;
