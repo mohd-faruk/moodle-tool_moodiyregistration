@@ -15,8 +15,6 @@
 // along with Moodle.  If not, see <https://www.gnu.org/licenses/>.
 
 namespace tool_moodiyregistration\privacy;
-defined('MOODLE_INTERNAL') || die();
-
 /**
  * Privacy provider tests for tool_moodiyregistration.
  *

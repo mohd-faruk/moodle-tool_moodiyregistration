@@ -25,7 +25,6 @@ namespace tool_moodiyregistration\event;
  * @license     https://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 class moodiy_registration extends \core\event\base {
-
     /**
      * Init method.
      *
@@ -52,7 +51,10 @@ class moodiy_registration extends \core\event\base {
      * @return string
      */
     public function get_description() {
-        return get_string('eventmoodiyregistration_desc', 'tool_moodiyregistration',
-         ['userid' => $this->userid, 'objectid' => $this->objectid]);
+        return get_string(
+            'eventmoodiyregistration_desc',
+            'tool_moodiyregistration',
+            ['userid' => $this->userid, 'objectid' => $this->objectid]
+        );
     }
 }

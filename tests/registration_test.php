@@ -33,7 +33,6 @@ use tool_moodiyregistration\api;
  * Unit tests for registration functionality.
  */
 class registration_test extends \advanced_testcase {
-
     /**
      * @var \stdClass Admin user for tests.
      */
@@ -523,7 +522,7 @@ class registration_test extends \advanced_testcase {
     public function test_repair_internal_site_registration_recreates_local_record(): void {
         global $DB, $CFG;
 
-        $this->markAsInternalSite();
+        $this->mark_as_internal_site();
 
         $oldrecord = (object) [
             'site_uuid' => 'old-uuid-123456',
@@ -564,7 +563,7 @@ class registration_test extends \advanced_testcase {
     public function test_repair_internal_site_registration_returns_pending_when_remote_sync_fails(): void {
         global $DB, $CFG;
 
-        $this->markAsInternalSite();
+        $this->mark_as_internal_site();
 
         $apiwrapper = $this->createMock(\tool_moodiyregistration\api_wrapper::class);
         $apiwrapper->method('update_registration')->will(
@@ -573,6 +572,12 @@ class registration_test extends \advanced_testcase {
         $CFG->tool_moodiyregistration_test_api_wrapper = $apiwrapper;
 
         $result = registration::repair_internal_site_registration('pending-uuid-123456');
+
+        // The repair helper logs a developer-mode debugging() message when the remote
+        // sync is deferred so dev/staging cron output surfaces the situation. The test
+        // must assert that here, otherwise Moodle's PHPUnit harness fails the test
+        // with "Unexpected debugging() call detected".
+        $this->assertDebuggingCalled();
 
         $this->assertSame('ok', $result['status']);
         $this->assertSame('pending', $result['remote_sync_status']);
@@ -590,7 +595,7 @@ class registration_test extends \advanced_testcase {
     public function test_repair_internal_site_registration_preserves_saved_site_info(): void {
         global $CFG;
 
-        $this->markAsInternalSite();
+        $this->mark_as_internal_site();
 
         $data = (object) [
             'site_name' => 'Custom Site Name',
@@ -660,7 +665,7 @@ class registration_test extends \advanced_testcase {
         $CFG->forced_plugin_settings = [];
         $this->assertFalse(registration::is_internal_site());
 
-        $this->markAsInternalSite();
+        $this->mark_as_internal_site();
         $this->assertTrue(registration::is_internal_site());
     }
 
@@ -692,7 +697,7 @@ class registration_test extends \advanced_testcase {
     /**
      * Mark the fixture as an internal hosted site.
      */
-    private function markAsInternalSite(): void {
+    private function mark_as_internal_site(): void {
         global $CFG;
 
         $CFG->forced_plugin_settings = ['auth_maintenance' => []];

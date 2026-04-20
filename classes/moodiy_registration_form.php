@@ -39,7 +39,6 @@ require_once($CFG->libdir . '/formslib.php');
  * @license    https://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 class moodiy_registration_form extends \moodleform {
-
     /**
      * Form definition
      */
@@ -67,13 +66,21 @@ class moodiy_registration_form extends \moodleform {
 
         $mform->addElement('header', 'moodle', get_string('registrationinfo', 'hub'));
 
-        $mform->addElement('text', 'site_name', get_string('organisationname', 'tool_moodiyregistration'),
-            ['class' => 'registration_textfield', 'maxlength' => 255]);
+        $mform->addElement(
+            'text',
+            'site_name',
+            get_string('organisationname', 'tool_moodiyregistration'),
+            ['class' => 'registration_textfield', 'maxlength' => 255]
+        );
         $mform->setType('site_name', PARAM_TEXT);
         $mform->addHelpButton('site_name', 'organisationname', 'tool_moodiyregistration');
 
-        $mform->addElement('text', 'admin_email', get_string('siteemail', 'hub'),
-            ['class' => 'registration_textfield']);
+        $mform->addElement(
+            'text',
+            'admin_email',
+            get_string('siteemail', 'hub'),
+            ['class' => 'registration_textfield']
+        );
         $mform->addRule('admin_email', $strrequired, 'required', null, 'client');
         $mform->setType('admin_email', PARAM_EMAIL);
         $mform->addHelpButton('admin_email', 'siteemail', 'hub');
@@ -91,8 +98,12 @@ class moodiy_registration_form extends \moodleform {
         $mform->addHelpButton('privacy', 'siteprivacy', 'hub');
         unset($options);
 
-        $mform->addElement('textarea', 'description', get_string('sitedesc', 'hub'),
-            ['rows' => 3, 'cols' => 41]);
+        $mform->addElement(
+            'textarea',
+            'description',
+            get_string('sitedesc', 'hub'),
+            ['rows' => 3, 'cols' => 41]
+        );
         $mform->setType('description', PARAM_TEXT);
         $mform->addHelpButton('description', 'sitedesc', 'hub');
 
@@ -108,8 +119,12 @@ class moodiy_registration_form extends \moodleform {
         $mform->addHelpButton('country_code', 'sitecountry', 'hub');
         $mform->addRule('country_code', $strrequired, 'required', null, 'client');
 
-        $mform->addElement('checkbox', 'policyagreed', get_string('policyagreed', 'hub'),
-            get_string('policyagreeddesc', 'hub', \tool_moodiyregistration\registration::MOODIYURL . '/privacy-policy'));
+        $mform->addElement(
+            'checkbox',
+            'policyagreed',
+            get_string('policyagreed', 'hub'),
+            get_string('policyagreeddesc', 'hub', \tool_moodiyregistration\registration::MOODIYURL . '/privacy-policy')
+        );
         $mform->addRule('policyagreed', $strrequired, 'required', null, 'client');
 
         $mform->addElement('static', 'urlstring', get_string('siteurl', 'hub'), $siteinfo['site_url']);
@@ -119,8 +134,12 @@ class moodiy_registration_form extends \moodleform {
         $mform->setExpanded('sitestats', !empty($highlightfields));
 
         // Display statistic that are going to be retrieve by the sites directory.
-        $mform->addElement('static', 'siteinfosummary', get_string('sendfollowinginfo', 'hub'),
-         \tool_moodiyregistration\registration::get_stats_summary($siteinfo));
+        $mform->addElement(
+            'static',
+            'siteinfosummary',
+            get_string('sendfollowinginfo', 'hub'),
+            \tool_moodiyregistration\registration::get_stats_summary($siteinfo)
+        );
 
         // Check if it's a first registration or update.
         if (registration::is_registered()) {
@@ -160,12 +179,13 @@ class moodiy_registration_form extends \moodleform {
      */
     public function get_data() {
         if ($data = parent::get_data()) {
-
             if (debugging('', DEBUG_DEVELOPER)) {
                 // Display debugging message for developers who added fields to the form
                 // and forgot to add them to registration::FORM_FIELDS.
-                $keys = array_diff(array_keys((array)$data),
-                    ['returnurl', 'mform_isexpanded_id_sitestats', 'submitbutton', 'update']);
+                $keys = array_diff(
+                    array_keys((array)$data),
+                    ['returnurl', 'mform_isexpanded_id_sitestats', 'submitbutton', 'update']
+                );
                 if ($extrafields = array_diff($keys, registration::FORM_FIELDS)) {
                     debugging('Found extra fields in the form results: ' . join(', ', $extrafields), DEBUG_DEVELOPER);
                 }
@@ -176,6 +196,4 @@ class moodiy_registration_form extends \moodleform {
         }
         return $data;
     }
-
 }
-

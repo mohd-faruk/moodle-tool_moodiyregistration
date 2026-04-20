@@ -25,7 +25,6 @@ namespace tool_moodiyregistration\event;
  * @license     https://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 class moodiy_unregistration extends \core\event\base {
-
     /**
      * Get the name of the event.
      */
@@ -39,8 +38,11 @@ class moodiy_unregistration extends \core\event\base {
      * @return string
      */
     public function get_description(): string {
-        return get_string('eventmoodiyunregistration_desc', 'tool_moodiyregistration',
-         ['userid' => $this->userid, 'objectid' => $this->objectid]);
+        return get_string(
+            'eventmoodiyunregistration_desc',
+            'tool_moodiyregistration',
+            ['userid' => $this->userid, 'objectid' => $this->objectid]
+        );
     }
 
     /**

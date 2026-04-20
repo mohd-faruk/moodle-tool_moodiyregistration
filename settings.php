@@ -26,8 +26,9 @@
 defined('MOODLE_INTERNAL') || die();
 
 if ($hassiteconfig) {
-    $ADMIN->add('root', new admin_externalpage('moodiyregistration',
+    $ADMIN->add('root', new admin_externalpage(
+        'moodiyregistration',
         get_string('pluginname', 'tool_moodiyregistration'),
-        new moodle_url('/admin/tool/moodiyregistration/index.php')));
-
+        new moodle_url('/admin/tool/moodiyregistration/index.php')
+    ));
 }

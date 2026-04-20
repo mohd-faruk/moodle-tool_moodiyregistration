@@ -158,8 +158,10 @@ if (!hash_equals($hmackey, $headerkey)) {
     exit;
 }
 
-if (array_key_exists('timestamp', $postdata)
-    && !\tool_moodiyregistration\registration::is_fresh_callback_timestamp($postdata['timestamp'])) {
+if (
+    array_key_exists('timestamp', $postdata)
+    && !\tool_moodiyregistration\registration::is_fresh_callback_timestamp($postdata['timestamp'])
+) {
     http_response_code(400); // Bad Request.
     // Legacy callers may omit `timestamp`; once present, freshness is part of the signed contract.
     // Keep this compatibility branch until every sender in the fleet is known to include `timestamp`.
@@ -169,7 +171,6 @@ if (array_key_exists('timestamp', $postdata)
 
 // Validate the verification data.
 if (isset($postdata['site_uuid']) && isset($postdata['id'])) {
-
     if ($DB->record_exists('tool_moodiyregistration', ['site_uuid' => $siteuuid])) {
         $response = [
             'status' => 'success',

@@ -27,7 +27,6 @@ namespace tool_moodiyregistration\task;
  * Task to update registration on moodiy after siteurl update.
  */
 class siteurl_update_task extends \core\task\scheduled_task {
-
     /**
      * Get a descriptive name for this task (shown to admins).
      *
@@ -44,5 +43,4 @@ class siteurl_update_task extends \core\task\scheduled_task {
     public function execute() {
         \tool_moodiyregistration\registration::update_registration_siteurl();
     }
-
 }

@@ -51,7 +51,10 @@ class moodiyregistration_updated extends \core\event\base {
      * @return string
      */
     public function get_description() {
-        return get_string('eventmoodiyregistrationupdated_desc', 'tool_moodiyregistration',
-         ['userid' => $this->userid, 'objectid' => $this->objectid]);
+        return get_string(
+            'eventmoodiyregistrationupdated_desc',
+            'tool_moodiyregistration',
+            ['userid' => $this->userid, 'objectid' => $this->objectid]
+        );
     }
 }

@@ -23,8 +23,6 @@
  */
 
 namespace tool_moodiyregistration;
-defined('MOODLE_INTERNAL') || die();
-
 use moodle_exception;
 use curl;
 use stdClass;
@@ -114,7 +112,8 @@ class api {
         } else if ($response === false) {
             throw new coding_exception('Error calling API: ' . $curl->getError());
         } else if ($info['http_code'] != 200 || empty($response['success'])) {
-            throw new moodle_exception($response['message'] ?? 'Error during registration');
+            $message = $response['message'] ?? 'Error during registration';
+            throw new moodle_exception('registrationerror', 'tool_moodiyregistration', '', $message);
         } else {
             return $response;
         }
@@ -136,7 +135,7 @@ class api {
             ksort($params);
             $payload = json_encode($params);
         } catch (\Exception $e) {
-            throw new moodle_exception( $e->getMessage());
+            throw new moodle_exception('errorpayloadencoding', 'tool_moodiyregistration', '', $e->getMessage());
         }
 
         $hmac = hash_hmac("sha256", $payload, $reginfo->site_uuid);
@@ -162,11 +161,12 @@ class api {
                 foreach ($response['errors'] as $error) {
                     if (stripos($error, self::ERROR_REGISTRATION_NONEXISTENT) !== false) {
                         // Throw exception to remove registration from moodle.
-                        throw new moodle_exception($error);
+                        throw new moodle_exception('errorregistrationupdate', 'tool_moodiyregistration', '', $error);
                     }
                 }
             }
-            throw new moodle_exception($response['message'] ?? 'Error during registration update');
+            $message = $response['message'] ?? 'Error during registration update';
+            throw new moodle_exception('errorregistrationupdate', 'tool_moodiyregistration', '', $message);
         } else {
             return $response;
         }
@@ -211,13 +211,13 @@ class api {
                 foreach ($response['errors'] as $error) {
                     if (stripos($error, self::ERROR_REGISTRATION_NONEXISTENT) !== false) {
                         // Throw exception to remove registration from moodle.
-                        throw new moodle_exception($error);
+                        throw new moodle_exception('errorunregister', 'tool_moodiyregistration', '', $error);
                     }
                 }
             }
-            throw new moodle_exception($response['message'] ?? 'Error during un-registration');
+            $message = $response['message'] ?? 'Error during un-registration';
+            throw new moodle_exception('errorunregister', 'tool_moodiyregistration', '', $message);
         }
         return $response;
-
     }
 }

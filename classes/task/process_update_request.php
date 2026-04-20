@@ -24,13 +24,10 @@
  */
 
 namespace tool_moodiyregistration\task;
-defined('MOODLE_INTERNAL') || die();
-
 /**
  * Adhoc task to process update requests from Moodiy.
  */
 class process_update_request extends \core\task\adhoc_task {
-
     /**
      * Execute the task.
      */

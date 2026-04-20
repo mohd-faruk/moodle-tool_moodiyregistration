@@ -15,8 +15,6 @@
 // along with Moodle.  If not, see <https://www.gnu.org/licenses/>.
 
 namespace tool_moodiyregistration;
-defined('MOODLE_INTERNAL') || die();
-
 /**
  * Class api_wrapper
  *
@@ -30,21 +28,31 @@ defined('MOODLE_INTERNAL') || die();
  */
 class api_wrapper {
     /**
-     * Wrapper for static moodiy_registration method
+     * Instance proxy for the static api::moodiy_registration call.
+     *
+     * @param array $params Registration request payload sent to the Moodiy API.
+     * @return mixed Decoded response from api::moodiy_registration().
      */
     public function moodiy_registration($params) {
         return api::moodiy_registration($params);
     }
 
     /**
-     * Wrapper for static update_registration method
+     * Instance proxy for the static api::update_registration call.
+     *
+     * @param object $reginfo Existing registration record (carries site_uuid used for HMAC auth).
+     * @param array $data Updated site info payload to send.
+     * @return mixed Decoded response from api::update_registration().
      */
     public function update_registration($reginfo, $data) {
         return api::update_registration($reginfo, $data);
     }
 
     /**
-     * Wrapper for static unregister_site method
+     * Instance proxy for the static api::unregister_site call.
+     *
+     * @param object $reginfo Existing registration record (carries site_uuid used for HMAC auth).
+     * @return mixed Decoded response from api::unregister_site().
      */
     public function unregister_site($reginfo) {
         return api::unregister_site($reginfo);

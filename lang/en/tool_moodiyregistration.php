@@ -26,6 +26,7 @@
 defined('MOODLE_INTERNAL') || die();
 
 $string['aiusagestats'] = 'AI usage stats ({$a->timefrom} - {$a->timeto})';
+$string['errorpayloadencoding'] = 'Failed to encode the registration payload before sending to Moodiy. Error: {$a}';
 $string['errorregistrationupdate'] = 'An error occurred during registration update . Error: {$a}';
 $string['errorunregister'] = 'There was an error while unregistering your site. Error: {$a}';
 $string['eventmoodiyregistration'] = 'Site registered with MoodiyCloud';

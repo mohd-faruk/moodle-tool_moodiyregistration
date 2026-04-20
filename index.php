@@ -80,7 +80,6 @@ if ($fromdata = $siteregistrationform->get_data()) {
         \tool_moodiyregistration\registration::register($fromdata, $returnurl);
         // This method will redirect away.
     }
-
 }
 
 // OUTPUT SECTION.
@@ -123,11 +122,15 @@ $siteregistrationform->display();
 if (\tool_moodiyregistration\registration::is_registered()) {
     // Unregister link.
     $unregisterhuburl = new moodle_url("/admin/tool/moodiyregistration/index.php", ['unregistration' => 1]);
-    echo html_writer::div(html_writer::link($unregisterhuburl, get_string('unregister', 'tool_moodiyregistration')),
-     'unregister mt-2');
+    echo html_writer::div(
+        html_writer::link($unregisterhuburl, get_string('unregister', 'tool_moodiyregistration')),
+        'unregister mt-2'
+    );
 } else if ($isinitialregistration) {
-    echo html_writer::div(html_writer::link(new moodle_url($returnurl), get_string('skipregistration', 'tool_moodiyregistration')),
-        'skipregistration mt-2');
+    echo html_writer::div(
+        html_writer::link(new moodle_url($returnurl), get_string('skipregistration', 'tool_moodiyregistration')),
+        'skipregistration mt-2'
+    );
 }
 
 

@@ -24,13 +24,10 @@
  */
 
 namespace tool_moodiyregistration\task;
-defined('MOODLE_INTERNAL') || die();
-
 /**
  * Adhoc task to register internal site postinstallation of plugin.
  */
 class internal_site_registration extends \core\task\adhoc_task {
-
     /**
      * Execute the task.
      */

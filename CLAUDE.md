@@ -23,9 +23,29 @@ php vendor/bin/phpunit --filter test_site_registration admin/tool/moodiyregistra
 
 Always tee test output to temp files: `php vendor/bin/phpunit ... 2>&1 | tee /tmp/test_output.txt`
 
-## CI
+## Local CI
 
-GitHub Actions CI uses Catalyst's reusable Moodle workflows (`.github/workflows/ci.yml`). Currently disables phpdoc, phpcpd, phpcs, behat, grunt, and release checks — only PHPUnit runs in CI.
+Run the workflow-equivalent checks from the meta-repo before pushing:
+
+```bash
+cd ../..
+make -C moodle_plugins pre-pr PLUGIN=moodle-tool_moodiyregistration
+make -C moodle_plugins lint-only PLUGIN=moodle-tool_moodiyregistration
+moodle_plugins/scripts/summarize.sh moodle-tool_moodiyregistration
+```
+
+`make pre-pr` mirrors this plugin's current GitHub workflow. `make lint-only`
+is the broader repo-level PHPCS sweep when you only need coding-style feedback.
+
+Plan, prerequisites, and per-step explanation: [`moodle-plugin-quality-toolkit.md`](../moodle-plugin-quality-toolkit.md).
+## GitHub Actions CI
+
+GitHub Actions CI uses Catalyst's reusable Moodle workflow
+(`.github/workflows/ci.yml`). `phplint`, `phpcs`, `phpdoc`, `validate`,
+`savepoints`, `mustache`, and `phpunit` run with
+`codechecker_max_warnings: 0`. `behat`, `grunt`, and the reusable workflow's
+`release` job remain disabled. Publishing is handled separately by
+`.github/workflows/moodle-release.yml`.
 
 ## Architecture
 

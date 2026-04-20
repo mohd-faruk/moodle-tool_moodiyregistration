@@ -23,8 +23,6 @@
  */
 
 namespace tool_moodiyregistration;
-defined('MOODLE_INTERNAL') || die();
-
 use moodle_exception;
 use moodle_url;
 use context_system;
@@ -41,7 +39,6 @@ use tool_moodiyregistration\api;
  * @license    https://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 class registration {
-
     /** @var array Fields used in a site registration form.
      * IMPORTANT: any new fields with non-empty defaults have to be added to CONFIRM_NEW_FIELDS */
     const FORM_FIELDS = ['policyagreed', 'language', 'country_code', 'privacy',
@@ -158,17 +155,29 @@ class registration {
             'resources' => get_string('resourcesnumber', 'hub', $siteinfo['resources']),
             'badges' => get_string('badgesnumber', 'hub', $siteinfo['badges']),
             'issuedbadges' => get_string('issuedbadgesnumber', 'hub', $siteinfo['issuedbadges']),
-            'participantnumberaverage' => get_string('participantnumberaverage', 'hub',
-                format_float($siteinfo['participantnumberaverage'], 2)),
-            'activeparticipantnumberaverage' => get_string('activeparticipantnumberaverage', 'hub',
-                format_float($siteinfo['activeparticipantnumberaverage'], 2)),
-            'modulenumberaverage' => get_string('modulenumberaverage', 'hub',
-                format_float($siteinfo['modulenumberaverage'], 2)),
+            'participantnumberaverage' => get_string(
+                'participantnumberaverage',
+                'hub',
+                format_float($siteinfo['participantnumberaverage'], 2)
+            ),
+            'activeparticipantnumberaverage' => get_string(
+                'activeparticipantnumberaverage',
+                'hub',
+                format_float($siteinfo['activeparticipantnumberaverage'], 2)
+            ),
+            'modulenumberaverage' => get_string(
+                'modulenumberaverage',
+                'hub',
+                format_float($siteinfo['modulenumberaverage'], 2)
+            ),
             'mobileservicesenabled' => get_string('mobileservicesenabled', 'hub', $mobileservicesenabled),
             'mobilenotificationsenabled' => get_string('mobilenotificationsenabled', 'hub', $mobilenotificationsenabled),
             'registereduserdevices' => get_string('registereduserdevices', 'hub', $siteinfo['registereduserdevices']),
-            'registeredactiveuserdevices' => get_string('registeredactiveuserdevices', 'hub',
-             $siteinfo['registeredactiveuserdevices']),
+            'registeredactiveuserdevices' => get_string(
+                'registeredactiveuserdevices',
+                'hub',
+                $siteinfo['registeredactiveuserdevices']
+            ),
             'analyticsenabledmodels' => get_string('analyticsenabledmodels', 'hub', $siteinfo['analyticsenabledmodels']),
             'analyticspredictions' => get_string('analyticspredictions', 'hub', $siteinfo['analyticspredictions']),
             'analyticsactions' => get_string('analyticsactions', 'hub', $siteinfo['analyticsactions']),
@@ -192,7 +201,7 @@ class registration {
     /**
      * Save registration info locally so it can be retrieved when registration needs to be updated
      *
-     * @param stdClass $formdata data from {@link site_registration_form}
+     * @param stdClass $formdata data from the registration form (see \tool_moodiyregistration\moodiy_registration_form)
      */
     public static function save_site_info($formdata) {
         foreach (self::FORM_FIELDS as $field) {
@@ -220,7 +229,7 @@ class registration {
     public static function get_saved_form_data($defaults = []) {
         $siteinfo = [];
         foreach (self::FORM_FIELDS as $field) {
-            $siteinfo[$field] = get_config('tool_moodiyregistration', 'site_'.$field);
+            $siteinfo[$field] = get_config('tool_moodiyregistration', 'site_' . $field);
             if ($siteinfo[$field] === false) {
                 $siteinfo[$field] = array_key_exists($field, $defaults) ? $defaults[$field] : null;
             }
@@ -250,7 +259,7 @@ class registration {
      * This method prepares data to be sent to the sites directory as a part of registration.
      * It collects all the necessary information and formats it correctly.
      *
-     * @param stdClass $formdata data from {@link site_registration_form}
+     * @param stdClass $formdata data from the registration form (see \tool_moodiyregistration\moodiy_registration_form)
      * @return array prepared data
      */
     public static function get_form_data($formdata) {
@@ -358,15 +367,18 @@ class registration {
     }
 
     /**
-     * Registers a site
+     * Registers a site with the Moodiy directory.
      *
      * This method will make sure that unconfirmed registration record is created and then redirect to
      * registration script on the sites directory.
      * The sites directory will check that the site is accessible, register it and redirect back
      * to /admin/registration/confirmregistration.php
      *
-     * @param string $returnurl
-     * @throws \coding_exception
+     * @param \stdClass $data Form data collected from the registration form.
+     * @param string $returnurl Where to redirect the user after the Moodiy round-trip completes.
+     * @return array|false|null In PHPUnit mode, returns the API response array; returns `false` if the
+     *                          remote registration call fails; otherwise redirects (no return).
+     * @throws \coding_exception When the site is already registered.
      */
     public static function register($data, $returnurl) {
         global $DB, $SESSION, $CFG;
@@ -421,14 +433,15 @@ class registration {
                 ]);
                 $event->add_record_snapshot('tool_moodiyregistration', $record);
                 $event->trigger();
-
             } catch (\moodle_exception $e) {
                 // If the table does not exist, we will create it later.
                 if ($e->getMessage() === 'errorconnect') {
                     throw new moodle_exception('errorconnect', 'tool_moodiyregistration', '', $e->getMessage());
                 } else {
-                    \core\notification::add(get_string('registrationerror', 'tool_moodiyregistration', $e->getMessage()),
-                    \core\output\notification::NOTIFY_ERROR);
+                    \core\notification::add(
+                        get_string('registrationerror', 'tool_moodiyregistration', $e->getMessage()),
+                        \core\output\notification::NOTIFY_ERROR
+                    );
                     return false;
                 }
             }
@@ -443,7 +456,10 @@ class registration {
     }
 
     /**
-     * Updates site registration when "Update reigstration" button is clicked by admin
+     * Updates site registration when the "Update registration" button is clicked by an admin.
+     *
+     * @param \stdClass $fomdata Form data submitted by the admin (legacy parameter name kept for BC).
+     * @return bool True if the update succeeded, false if there is no current registration to update.
      */
     public static function update_manual($fomdata) {
         global $DB, $CFG;
@@ -470,8 +486,10 @@ class registration {
             ]);
             $event->add_record_snapshot('tool_moodiyregistration', $registration);
             $event->trigger();
-            \core\notification::add(get_string('siteregistrationupdated', 'tool_moodiyregistration'),
-            \core\output\notification::NOTIFY_SUCCESS);
+            \core\notification::add(
+                get_string('siteregistrationupdated', 'tool_moodiyregistration'),
+                \core\output\notification::NOTIFY_SUCCESS
+            );
         } catch (moodle_exception $e) {
             if (stripos($e->getMessage(), \tool_moodiyregistration\api::ERROR_REGISTRATION_NONEXISTENT) !== false) {
                 self::handle_nonexistent_registration($registration);
@@ -479,13 +497,18 @@ class registration {
                     // In tests we do not redirect, just return.
                     return false;
                 }
-                redirect(new moodle_url('/admin/tool/moodiyregistration/index.php'),
-                 get_string('reregistration', 'tool_moodiyregistration'),
-                 null, \core\output\notification::NOTIFY_WARNING);
+                redirect(
+                    new moodle_url('/admin/tool/moodiyregistration/index.php'),
+                    get_string('reregistration', 'tool_moodiyregistration'),
+                    null,
+                    \core\output\notification::NOTIFY_WARNING
+                );
                 return;
             } else {
-                \core\notification::add(get_string('errorregistrationupdate', 'tool_moodiyregistration', $e->getMessage()),
-                    \core\output\notification::NOTIFY_ERROR);
+                \core\notification::add(
+                    get_string('errorregistrationupdate', 'tool_moodiyregistration', $e->getMessage()),
+                    \core\output\notification::NOTIFY_ERROR
+                );
                 return false;
             }
         }
@@ -494,11 +517,14 @@ class registration {
     }
 
     /**
-     * Unregister site
+     * Unregister this site from the Moodiy directory.
      *
-     * @param bool $unpublishalladvertisedcourses
-     * @param bool $unpublishalluploadedcourses
-     * @return bool
+     * Sends a DELETE to the Moodiy API and removes the local registration record.
+     *
+     * @return bool|null `true` when there is no registration to delete or the delete succeeded;
+     *                   `false` when the remote unregister call failed; `null` (implicit, via early
+     *                   `return;`) when the registration is already gone on the Moodiy side and the
+     *                   user is being redirected to the unregistered-already page.
      */
     public static function unregister() {
         global $DB;
@@ -522,8 +548,10 @@ class registration {
             ]);
             $event->add_record_snapshot('tool_moodiyregistration', $registration);
             $event->trigger();
-            \core\notification::add(get_string('unregister-success', 'tool_moodiyregistration'),
-                \core\output\notification::NOTIFY_SUCCESS);
+            \core\notification::add(
+                get_string('unregister-success', 'tool_moodiyregistration'),
+                \core\output\notification::NOTIFY_SUCCESS
+            );
             self::$registration = null;
         } catch (moodle_exception $e) {
             if (stripos($e->getMessage(), \tool_moodiyregistration\api::ERROR_REGISTRATION_NONEXISTENT) !== false) {
@@ -532,13 +560,18 @@ class registration {
                     // In tests we do not redirect, just return.
                     return false;
                 }
-                redirect(new moodle_url('/admin/tool/moodiyregistration/index.php'),
-                 get_string('unregistered-already', 'tool_moodiyregistration'),
-                 null, \core\output\notification::NOTIFY_WARNING);
+                redirect(
+                    new moodle_url('/admin/tool/moodiyregistration/index.php'),
+                    get_string('unregistered-already', 'tool_moodiyregistration'),
+                    null,
+                    \core\output\notification::NOTIFY_WARNING
+                );
                 return;
             } else {
-                \core\notification::add(get_string('unregistrationerror', 'tool_moodiyregistration', $e->getMessage()),
-                \core\output\notification::NOTIFY_ERROR);
+                \core\notification::add(
+                    get_string('unregistrationerror', 'tool_moodiyregistration', $e->getMessage()),
+                    \core\output\notification::NOTIFY_ERROR
+                );
                 return false;
             }
         }
@@ -615,7 +648,6 @@ class registration {
                 $data[$provider][$actionname]['success_count'] += 1;
                 // Collect AI processing times for averaging.
                 $data[$provider][$actionname]['times'][] = (int)$action->timecompleted - (int)$action->timecreated;
-
             } else {
                 $data[$provider][$actionname]['fail_count'] += 1;
                 // Collect errors for determing the predominant one.
@@ -644,7 +676,6 @@ class registration {
                         // Average the time to perform the action (seconds).
                         $totaltime = array_sum($data[$p][$a]['times']);
                         $data[$p][$a]['average_time'] = round($totaltime / $count);
-
                     }
                 }
                 unset($data[$p][$a]['times']);
@@ -730,6 +761,11 @@ class registration {
     /**
      * Updates site registration via scheduled task.
      *
+     * @param bool $force When true, send the update even if the payload hash matches the last known one.
+     * @return bool|null `true` when the update was attempted and succeeded (or was skipped as a no-op);
+     *                   `false` when called in PHPUnit and the registration was found to be missing
+     *                   on the Moodiy side; `null` (implicit, via early `return;`) when there is no
+     *                   current registration to update or when an error occurred during the API call.
      * @throws moodle_exception
      */
     public static function update_registration(bool $force = false) {
@@ -899,7 +935,11 @@ class registration {
             self::remember_automatic_update_payload_hash($siteinfo);
             $remotesynced = true;
         } catch (moodle_exception $e) {
-            // A remote sync miss here is recoverable. The caller receives a pending status and can retry later.
+            debugging(
+                'Local internal site registration was repaired, but the remote Moodiy sync is pending: ' .
+                $e->getMessage(),
+                DEBUG_DEVELOPER
+            );
         }
         self::$registration = null;
 
@@ -1148,6 +1188,12 @@ class registration {
 
     /**
      * Handle the case when the registration does not exist on Moodiy side anymore.
+     *
+     * Disables tool_moodiymobile and removes the local registration record so subsequent
+     * automatic updates do not keep retrying against a server-side 404.
+     *
+     * @param \stdClass $registration The local registration record that Moodiy no longer recognises.
+     * @return void
      */
     private static function handle_nonexistent_registration(\stdClass $registration): void {
         global $DB;
@@ -1184,8 +1230,12 @@ class registration {
     /**
      * Determine whether an automatic registration update would be a no-op.
      *
-     * @param array $siteinfo The current automatic update payload
-     * @return bool
+     * Compares a hash of the prepared payload against the last successful one to dedupe
+     * scheduled-task updates that wouldn't change anything.
+     *
+     * @param array $siteinfo The current automatic update payload.
+     * @param bool $force When true, never skip — always send the update.
+     * @return bool True if the update should be skipped, false otherwise.
      */
     private static function should_skip_automatic_update(array $siteinfo, bool $force = false): bool {
         if ($force) {
@@ -1246,5 +1296,4 @@ class registration {
 
         return false;
     }
-
 }

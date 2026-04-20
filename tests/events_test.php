@@ -34,7 +34,6 @@ use tool_moodiyregistration\event\update_request;
  * Unit tests for event functionality.
  */
 class events_test extends \advanced_testcase {
-
     /**
      * Set up tests.
      */
@@ -96,11 +95,11 @@ class events_test extends \advanced_testcase {
      * @covers ::update_request
      */
     public function test_registration_events(
-            string $eventclass,
-            string $crud,
-            int $edulevel,
-            bool $needssnapshot,
-            string $expectedclass
+        string $eventclass,
+        string $crud,
+        int $edulevel,
+        bool $needssnapshot,
+        string $expectedclass
     ): void {
         global $DB;
 
